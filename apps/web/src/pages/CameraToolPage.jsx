@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import { generateControls } from '@/utils/ControlsGenerator.js';
@@ -6,6 +6,7 @@ import { generateControls } from '@/utils/ControlsGenerator.js';
 const CameraToolPage = () => {
 
   const fileInputRef = useRef(null);
+  const inputRef = useRef(null);
 
   const [fileContent, setFileContent] = useState('');
   const [output, setOutput] = useState('');
@@ -46,8 +47,56 @@ const CameraToolPage = () => {
     if(mode === "custom"){
       setMovementConfig(emptyMovement);
       setActiveDir("up");
+
+      setTimeout(()=>{
+        inputRef.current?.focus();
+      },0);
     }
   };
+
+  // ================= AUTO FOCUS =================
+  useEffect(()=>{
+    if(movementMode === "custom"){
+      inputRef.current?.focus();
+    }
+  },[activeDir]);
+
+  // ================= KEYBOARD CAPTURE =================
+  useEffect(()=>{
+    if(movementMode !== "custom") return;
+
+    const handleKeyDown = (e) => {
+
+      if(!activeDir) return;
+
+      if(e.key === "Control" || e.key === "Shift" || e.key === "Alt"){
+        return;
+      }
+
+      e.preventDefault();
+
+      const key = e.key.toLowerCase();
+
+      setMovementConfig(prev=>{
+        const current = prev[activeDir];
+
+        if(current.keys.includes(key)) return prev;
+
+        return {
+          ...prev,
+          [activeDir]: {
+            ...current,
+            keys: [...current.keys, key]
+          }
+        };
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+
+  },[movementMode, activeDir]);
 
   // ================= VISUAL =================
   const renderKey = (dir) => {
@@ -83,7 +132,6 @@ const CameraToolPage = () => {
     return parts.join(" & ");
   };
 
-  // ================= INPUT =================
   const buildInputValue = () => {
     const cfg = movementConfig[activeDir];
 
@@ -158,59 +206,6 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* UPLOAD */}
-        <div
-          onClick={() => fileInputRef.current.click()}
-          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 text-center"
-        >
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden"/>
-          <p className="text-gray-400">{fileName || "Click para subir controls.sii"}</p>
-        </div>
-
-        {/* CAMERA ZERO */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
-
-          <div className="flex gap-4 items-center">
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">CTRL</button>
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
-
-            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
-              {camKey}
-            </div>
-          </div>
-        </div>
-
-        {/* TELEPORT */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
-
-          <div className="flex gap-3 mb-4">
-            {[
-              ["CTRL",tpCtrl,setTpCtrl],
-              ["SHIFT",tpShift,setTpShift],
-              ["ALT",tpAlt,setTpAlt]
-            ].map(([label,val,set])=>(
-              <button
-                key={label}
-                onClick={()=>set(!val)}
-                className={`px-4 py-2 rounded-lg border ${val?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-3 items-center">
-            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">F9</button>
-
-            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
-              F9
-            </div>
-          </div>
-        </div>
-
         {/* MOVIMIENTO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
@@ -225,7 +220,6 @@ const CameraToolPage = () => {
             ))}
           </div>
 
-          {/* MODIFIERS SOLO CUSTOM */}
           {movementMode === "custom" && (
             <div className="flex gap-4 mb-6">
               {["ctrl","shift","alt"].map(mod=>(
@@ -277,10 +271,11 @@ const CameraToolPage = () => {
             </div>
           </div>
 
-          {/* INPUT SOLO CUSTOM */}
+          {/* INPUT */}
           {movementMode === "custom" && activeDir && (
             <div className="flex justify-center mt-6">
               <input
+                ref={inputRef}
                 value={buildInputValue()}
                 onChange={(e)=>handleInputChange(e.target.value)}
                 placeholder="CTRL+C"
@@ -294,10 +289,6 @@ const CameraToolPage = () => {
         <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
           Generar Controls
         </button>
-
-        {output && (
-          <textarea value={output} readOnly className="w-full h-64 mt-6 bg-black p-4"/>
-        )}
 
       </div>
 
