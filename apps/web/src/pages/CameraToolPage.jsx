@@ -41,13 +41,13 @@ const CameraToolPage = () => {
     }));
   };
 
-  // 🔥 FIX: reset correcto al cambiar modo
   const handleModeChange = (mode) => {
     setMovementMode(mode);
-    setMovementConfig(emptyMovement);
-    setActiveDir("up");
 
     if(mode === "custom"){
+      setMovementConfig(emptyMovement);
+      setActiveDir("up");
+
       requestAnimationFrame(()=>{
         inputRef.current?.focus();
       });
@@ -62,28 +62,12 @@ const CameraToolPage = () => {
     }
   },[movementMode, activeDir]);
 
-  // 🔥 FIX: backspace funcional
   useEffect(()=>{
     if(movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
 
       if(!activeDir) return;
-
-      if (e.key === "Backspace") {
-        setMovementConfig(prev => {
-          const current = prev[activeDir];
-          return {
-            ...prev,
-            [activeDir]: {
-              ...current,
-              keys: current.keys.slice(0, -1)
-            }
-          };
-        });
-        return;
-      }
-
       if(["Control","Shift","Alt"].includes(e.key)) return;
 
       e.preventDefault();
@@ -109,22 +93,11 @@ const CameraToolPage = () => {
 
   },[movementMode, activeDir]);
 
-  // 🔥 FIX: numpad correcto
   const renderKey = (dir) => {
     if (movementMode === "numpad") {
-      return { up:"8", down:"2", left:"4", right:"6" }[dir];
+      return { up:"2", down:"5", left:"4", right:"6" }[dir];
     }
     return { up:"↑", down:"↓", left:"←", right:"→" }[dir];
-  };
-
-  const renderCombo = (cfg) => {
-    let parts = [];
-    if (cfg.ctrl) parts.push("C");
-    if (cfg.shift) parts.push("S");
-    if (cfg.alt) parts.push("A");
-    if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
-
-    return parts.join("+");
   };
 
   const buildCombo = (cfg) => {
@@ -220,7 +193,11 @@ const CameraToolPage = () => {
           <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
 
           <div className="flex gap-4 items-center">
-            {[["CTRL",tpCtrl,setTpCtrl],["SHIFT",tpShift,setTpShift],["ALT",tpAlt,setTpAlt]].map(([label,val,set])=>(
+            {[
+              ["CTRL",tpCtrl,setTpCtrl],
+              ["SHIFT",tpShift,setTpShift],
+              ["ALT",tpAlt,setTpAlt]
+            ].map(([label,val,set])=>(
               <button
                 key={label}
                 onClick={()=>set(!val)}
@@ -244,7 +221,7 @@ const CameraToolPage = () => {
           <div className="grid grid-cols-2">
 
             {/* IZQUIERDA */}
-            <div className="flex flex-col justify-start">
+            <div className="flex flex-col pt-10">
 
               <div className="flex gap-4 mb-8">
                 {["flechas","numpad","custom"].map(mode => (
@@ -259,7 +236,7 @@ const CameraToolPage = () => {
               </div>
 
               {movementMode === "custom" && (
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-4">
                   {["ctrl","shift","alt"].map(mod=>(
                     <button
                       key={mod}
@@ -275,36 +252,32 @@ const CameraToolPage = () => {
             </div>
 
             {/* DERECHA */}
-            <div className="flex justify-end pr-20 pt-4">
+            <div className="flex justify-end pr-20 pt-0">
 
               <div className="grid grid-cols-3 gap-4">
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("up")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold tracking-wider">{renderCombo(movementConfig.up)}</div>
+                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  {renderKey("up")}
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("left")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold tracking-wider">{renderCombo(movementConfig.left)}</div>
+                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  {renderKey("left")}
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("right")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold tracking-wider">{renderCombo(movementConfig.right)}</div>
+                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  {renderKey("right")}
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("down")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold tracking-wider">{renderCombo(movementConfig.down)}</div>
+                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  {renderKey("down")}
                 </button>
 
                 <div></div>
