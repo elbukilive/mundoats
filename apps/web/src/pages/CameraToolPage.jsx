@@ -44,23 +44,54 @@ const CameraToolPage = () => {
 
       <Header />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-6">
 
         <h1 className="text-3xl font-bold mb-8">
-          🎮 Controls Generator
+          🎮 Controls Generator (Camera Zero)
         </h1>
 
+        {/* CAMERA ZERO */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
+
+          <div className="flex gap-4 items-center">
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">CTRL</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
+
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              0
+            </div>
+          </div>
+        </div>
+
+        {/* TELEPORT */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+          <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
+
+          <div className="flex gap-4 items-center">
+            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">CTRL</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
+
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              F9
+            </div>
+          </div>
+        </div>
+
+        {/* MOVIMIENTO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl">
 
-          <h2 className="mb-6 text-lg font-semibold">Movimiento Cámara</h2>
+          <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          {/* 🔥 GRID PRINCIPAL */}
-          <div className="grid grid-cols-2 items-center">
+          {/* 🔥 CONTENEDOR COMPARTIDO */}
+          <div className="grid grid-cols-2 h-[260px]">
 
             {/* IZQUIERDA */}
-            <div className="grid grid-rows-3 h-[240px]">
+            <div className="grid grid-rows-3">
 
-              {/* FILA 1 (↑) */}
+              {/* FILA 1 */}
               <div className="flex items-start gap-4">
                 {["flechas","numpad","custom"].map(mode => (
                   <button
@@ -77,65 +108,50 @@ const CameraToolPage = () => {
                 ))}
               </div>
 
-              {/* FILA 2 (centro) */}
+              {/* FILA 2 */}
               <div></div>
 
-              {/* FILA 3 (↓) */}
-              {movementMode === "custom" && (
-                <div className="flex items-end gap-4">
-                  {["ctrl","shift","alt"].map(mod=>(
-                    <button
-                      key={mod}
-                      onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
-                      className="px-4 py-2 border border-gray-600 rounded-lg"
-                    >
-                      {mod.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* FILA 3 */}
+              <div className="flex items-end gap-4">
+                {movementMode === "custom" && ["ctrl","shift","alt"].map(mod=>(
+                  <button
+                    key={mod}
+                    onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
+                    className="px-4 py-2 border border-gray-600 rounded-lg"
+                  >
+                    {mod.toUpperCase()}
+                  </button>
+                ))}
+              </div>
 
             </div>
 
             {/* DERECHA */}
-            <div className="flex justify-center">
+            <div className="flex items-center justify-center">
 
-              {/* 🔥 GRID FLECHAS REAL */}
               <div className="grid grid-cols-3 grid-rows-3 gap-4">
 
                 <div></div>
 
-                <button
-                  onClick={()=>setActiveDir("up")}
-                  className="w-20 h-20 border border-yellow-400 bg-yellow-400/10 rounded-lg flex items-center justify-center"
-                >
+                <button className="w-20 h-20 border border-yellow-400 bg-yellow-400/10 rounded-lg flex items-center justify-center">
                   {renderKey("up")}
                 </button>
 
                 <div></div>
 
-                <button
-                  onClick={()=>setActiveDir("left")}
-                  className="w-20 h-20 border border-gray-600 bg-black rounded-lg flex items-center justify-center"
-                >
+                <button className="w-20 h-20 border border-gray-600 rounded-lg flex items-center justify-center">
                   {renderKey("left")}
                 </button>
 
                 <div></div>
 
-                <button
-                  onClick={()=>setActiveDir("right")}
-                  className="w-20 h-20 border border-gray-600 bg-black rounded-lg flex items-center justify-center"
-                >
+                <button className="w-20 h-20 border border-gray-600 rounded-lg flex items-center justify-center">
                   {renderKey("right")}
                 </button>
 
                 <div></div>
 
-                <button
-                  onClick={()=>setActiveDir("down")}
-                  className="w-20 h-20 border border-gray-600 bg-black rounded-lg flex items-center justify-center"
-                >
+                <button className="w-20 h-20 border border-gray-600 rounded-lg flex items-center justify-center">
                   {renderKey("down")}
                 </button>
 
