@@ -12,16 +12,16 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
 
-  // CAMERA ZERO
+  // ================= CAMERA ZERO =================
   const [camKey] = useState("0");
 
-  // TELEPORT
+  // ================= TELEPORT =================
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
   const [tpKey] = useState("f9");
 
-  // MOVIMIENTO
+  // ================= MOVIMIENTO =================
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
@@ -48,26 +48,29 @@ const CameraToolPage = () => {
       setMovementConfig(emptyMovement);
       setActiveDir("up");
 
-      requestAnimationFrame(()=>{
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
       });
     }
   };
 
-  useEffect(()=>{
-    if(movementMode === "custom"){
-      requestAnimationFrame(()=>{
+  // ================= AUTO FOCUS =================
+  useEffect(() => {
+    if (movementMode === "custom") {
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
       });
     }
-  },[movementMode, activeDir]);
+  }, [movementMode, activeDir]);
 
+  // ================= KEYBOARD CAPTURE =================
   useEffect(()=>{
     if(movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
 
       if(!activeDir) return;
+
       if(["Control","Shift","Alt"].includes(e.key)) return;
 
       e.preventDefault();
@@ -76,6 +79,7 @@ const CameraToolPage = () => {
 
       setMovementConfig(prev=>{
         const current = prev[activeDir];
+
         if(current.keys.includes(key)) return prev;
 
         return {
@@ -89,10 +93,11 @@ const CameraToolPage = () => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return ()=>window.removeEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
 
   },[movementMode, activeDir]);
 
+  // ================= VISUAL =================
   const renderKey = (dir) => {
     if (movementMode === "numpad") {
       return { up:"2", down:"5", left:"4", right:"6" }[dir];
@@ -119,7 +124,7 @@ const CameraToolPage = () => {
     if (cfg.shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
     if (cfg.alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
 
-    cfg.keys.forEach(k=>{
+    cfg.keys.forEach(k => {
       parts.push(`keyboard.${k}?0`);
     });
 
@@ -141,33 +146,34 @@ const CameraToolPage = () => {
   const handleInputChange = (value) => {
     const keys = value
       .toLowerCase()
-      .replace(/ctrl|shift|alt/gi,'')
+      .replace(/ctrl|shift|alt/gi, '')
       .split('+')
       .map(k=>k.trim())
       .filter(k=>k);
 
-    updateDir(activeDir,{keys});
+    updateDir(activeDir, { keys });
   };
 
+  // ================= GENERATE =================
   const handleGenerate = () => {
     if (!fileContent) {
       alert("Sube archivo primero");
       return;
     }
 
-    const result = generateControls(fileContent,{
-      camera:`keyboard.${camKey}?0`,
-      teleport:buildCombo({
-        ctrl:tpCtrl,
-        shift:tpShift,
-        alt:tpAlt,
-        keys:[tpKey]
+    const result = generateControls(fileContent, {
+      camera: `keyboard.${camKey}?0`,
+      teleport: buildCombo({
+        ctrl: tpCtrl,
+        shift: tpShift,
+        alt: tpAlt,
+        keys: [tpKey]
       }),
-      movement:{
-        up:buildCombo(movementConfig.up),
-        down:buildCombo(movementConfig.down),
-        left:buildCombo(movementConfig.left),
-        right:buildCombo(movementConfig.right),
+      movement: {
+        up: buildCombo(movementConfig.up),
+        down: buildCombo(movementConfig.down),
+        left: buildCombo(movementConfig.left),
+        right: buildCombo(movementConfig.right),
       }
     });
 
@@ -200,12 +206,11 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* TELEPORT (AHORA EN LÍNEA) */}
+        {/* TELEPORT */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
           <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
 
-          <div className="flex gap-4 items-center flex-wrap">
-
+          <div className="flex gap-3 mb-4">
             {[
               ["CTRL",tpCtrl,setTpCtrl],
               ["SHIFT",tpShift,setTpShift],
@@ -219,11 +224,14 @@ const CameraToolPage = () => {
                 {label}
               </button>
             ))}
+          </div>
+
+          <div className="flex gap-3 items-center">
+            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">F9</button>
 
             <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
               F9
             </div>
-
           </div>
         </div>
 
@@ -232,72 +240,54 @@ const CameraToolPage = () => {
 
           <h2 className="mb-4 font-semibold text-lg">Movimiento Cámara</h2>
 
-          <div className="flex gap-4 mb-10">
+          <div className="flex gap-4 mb-6">
             {["flechas","numpad","custom"].map(mode => (
-              <button key={mode}
+              <button
+                key={mode}
+                onMouseDown={(e)=>e.preventDefault()}
                 onClick={()=>handleModeChange(mode)}
-                className={`px-4 py-2 rounded-lg border ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}>
+                className={`px-4 py-2 rounded-lg border ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
+              >
                 {mode}
               </button>
             ))}
           </div>
 
-          {/* GRID LAYOUT PRO */}
-          <div className="grid grid-cols-2">
-
-            {/* BOTONES ABAJO IZQUIERDA */}
-            {movementMode === "custom" && (
-              <div className="flex flex-col justify-end gap-4 pb-6">
-                {["ctrl","shift","alt"].map(mod=>(
-                  <button
-                    key={mod}
-                    onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
-                    className={`px-4 py-2 rounded-lg border ${movementConfig[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
-                  >
-                    {mod.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* FLECHAS DERECHA ARRIBA */}
-            <div className="flex justify-center items-start">
-
-              <div className="grid grid-cols-3 gap-4">
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("up")}
+          {movementMode === "custom" && (
+            <div className="flex gap-4 mb-6">
+              {["ctrl","shift","alt"].map(mod=>(
+                <button
+                  key={mod}
+                  onMouseDown={(e)=>e.preventDefault()}
+                  onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
+                  className={`px-4 py-2 rounded-lg border ${movementConfig[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
+                >
+                  {mod.toUpperCase()}
                 </button>
+              ))}
+            </div>
+          )}
 
-                <div></div>
+          <div className="flex justify-center">
+            <div className="grid grid-cols-3 gap-4 items-center">
 
-                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("left")}
+              <div></div>
+
+              {["up","left","right","down"].map(dir => (
+                <button
+                  key={dir}
+                  onMouseDown={(e)=>e.preventDefault()}
+                  onClick={()=>setActiveDir(dir)}
+                  className={`w-20 h-20 rounded-lg border ${activeDir===dir?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}
+                >
+                  <div className="text-xl">{renderKey(dir)}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig[dir])}</div>
                 </button>
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("right")}
-                </button>
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("down")}
-                </button>
-
-                <div></div>
-
-              </div>
+              ))}
 
             </div>
-
           </div>
 
-          {/* INPUT */}
           {movementMode === "custom" && (
             <div className="flex justify-center mt-6">
               <input
