@@ -15,7 +15,6 @@ const CameraToolPage = () => {
   const [shift, setShift] = useState(true);
   const [alt, setAlt] = useState(false);
 
-  // 🔥 DEFAULT F9 ACTIVO
   const [useF9, setUseF9] = useState(true);
   const [key, setKey] = useState("f9");
 
@@ -41,7 +40,9 @@ const CameraToolPage = () => {
     if (shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
     if (alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
 
-    parts.push(`keyboard.${key}?0`);
+    if (key) {
+      parts.push(`keyboard.${key}?0`);
+    }
 
     return parts.join(" & ");
   };
@@ -129,7 +130,7 @@ const CameraToolPage = () => {
                 ALT
               </label>
 
-              {/* 🔥 F9 COMO OPCIÓN PRINCIPAL */}
+              {/* F9 */}
               <label className="flex items-center gap-2 cursor-pointer">
 
                 <input
@@ -142,7 +143,7 @@ const CameraToolPage = () => {
                     if (checked) {
                       setKey("f9");
                     } else {
-                      setKey("z"); // default cuando lo quitan
+                      setKey(""); // 🔥 FIX: sin Z
                     }
                   }}
                 />
@@ -167,6 +168,7 @@ const CameraToolPage = () => {
                 if (val) setKey(val);
               }}
               disabled={useF9}
+              placeholder=""
               className={`w-24 h-14 text-center text-xl font-semibold 
               bg-black text-white 
               border rounded-lg outline-none
