@@ -100,6 +100,16 @@ const CameraToolPage = () => {
     return { up:"↑", down:"↓", left:"←", right:"→" }[dir];
   };
 
+  const renderCombo = (cfg) => {
+    let parts = [];
+    if (cfg.ctrl) parts.push("C");
+    if (cfg.shift) parts.push("S");
+    if (cfg.alt) parts.push("A");
+    if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
+
+    return parts.join("+");
+  };
+
   const buildCombo = (cfg) => {
     let parts = [];
 
@@ -252,32 +262,36 @@ const CameraToolPage = () => {
             </div>
 
             {/* DERECHA */}
-            <div className="flex justify-end pr-20 pt-0">
+            <div className="flex justify-end pr-20 -mt-4">
 
               <div className="grid grid-cols-3 gap-4">
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("up")}
+                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  <div>{renderKey("up")}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("left")}
+                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  <div>{renderKey("left")}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.left)}</div>
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("right")}
+                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  <div>{renderKey("right")}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.right)}</div>
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  {renderKey("down")}
+                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  <div>{renderKey("down")}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.down)}</div>
                 </button>
 
                 <div></div>
