@@ -11,13 +11,13 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
 
-  // 🎮 Estados UI
+  // 🎮 estados
   const [ctrl, setCtrl] = useState(true);
   const [shift, setShift] = useState(true);
   const [alt, setAlt] = useState(false);
   const [key, setKey] = useState("z");
 
-  // 📂 subir archivo
+  // 📂 upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -31,28 +31,20 @@ const CameraToolPage = () => {
     reader.readAsText(file);
   };
 
-  // 🧠 construir combo
+  // 🧠 build combo
   const buildCombo = () => {
     let parts = [];
 
-    if (ctrl) {
-      parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
-    }
-
-    if (shift) {
-      parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
-    }
-
-    if (alt) {
-      parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-    }
+    if (ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
+    if (shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
+    if (alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
 
     parts.push(`keyboard.${key}?0`);
 
     return parts.join(" & ");
   };
 
-  // 🚀 generar
+  // 🚀 generate
   const handleGenerate = () => {
     if (!fileContent) {
       alert("Sube un archivo primero");
@@ -64,13 +56,13 @@ const CameraToolPage = () => {
     setOutput(result);
   };
 
-  // 📋 copiar
+  // 📋 copy
   const handleCopy = () => {
     navigator.clipboard.writeText(output);
     alert("Copiado!");
   };
 
-  // ⬇ descargar
+  // ⬇ download
   const handleDownload = () => {
     const blob = new Blob([output], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -112,7 +104,7 @@ const CameraToolPage = () => {
           </p>
         </div>
 
-        {/* 🎮 CONTROLES UI */}
+        {/* 🎮 CONTROLES */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
           <h2 className="mb-4 font-semibold text-lg">Cámara Cero</h2>
@@ -149,13 +141,38 @@ const CameraToolPage = () => {
               ALT
             </label>
 
-            {/* TECLA */}
-            <input
-              value={key}
-              onChange={(e) => setKey(e.target.value.toLowerCase())}
-              className="bg-black border border-gray-600 rounded px-4 py-2 w-20 text-center"
-              placeholder="z"
-            />
+            {/* 🔥 INPUT + F KEYS */}
+            <div className="flex flex-col gap-3">
+
+              <input
+                value={key}
+                onChange={(e) => setKey(e.target.value.slice(0,1).toLowerCase())}
+                className="bg-black border border-gray-600 rounded px-4 py-2 w-24 text-center"
+                placeholder="z"
+              />
+
+              <div className="flex flex-wrap gap-2">
+
+                {[
+                  "f1","f2","f3","f4","f5","f6",
+                  "f7","f8","f9","f10","f11","f12"
+                ].map((fKey) => (
+                  <button
+                    key={fKey}
+                    onClick={() => setKey(fKey)}
+                    className={`px-3 py-1 rounded border text-sm transition 
+                      ${key === fKey 
+                        ? "bg-yellow-500 text-black border-yellow-400" 
+                        : "bg-[#111] border-gray-600 hover:border-yellow-400"}
+                    `}
+                  >
+                    {fKey.toUpperCase()}
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
 
           </div>
         </div>
