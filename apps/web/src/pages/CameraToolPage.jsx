@@ -238,6 +238,18 @@ const CameraToolPage = () => {
             {renderToggleButton('SHIFT', tpShift, setTpShift)}
             {renderToggleButton('ALT', tpAlt, setTpAlt)}
 
+            <button
+              type="button"
+              onClick={() => setTpKey('f9')}
+              className={`px-4 py-2 rounded-lg border transition ${
+                normalizeKey(tpKey) === 'f9'
+                  ? 'border-yellow-400 bg-yellow-400/10'
+                  : 'border-gray-600'
+              }`}
+            >
+              F9
+            </button>
+
             <input
               type="text"
               value={tpKey}
