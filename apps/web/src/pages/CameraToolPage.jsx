@@ -7,6 +7,10 @@ const CameraToolPage = () => {
 
   const inputRef = useRef(null);
 
+  // =============================
+  // STATES
+  // =============================
+
   const [fileContent, setFileContent] = useState('');
   const [output, setOutput] = useState('');
 
@@ -35,7 +39,20 @@ const CameraToolPage = () => {
 
   const [movementConfig, setMovementConfig] = useState(emptyMovement);
 
+  // =============================
+  // HELPERS
+  // =============================
+
   const normalizeKey = (v) => v.toLowerCase().trim();
+
+  const buildDisplay = (ctrl, shift, alt, key) => {
+    let parts = [];
+    if (ctrl) parts.push("CTRL");
+    if (shift) parts.push("SHIFT");
+    if (alt) parts.push("ALT");
+    if (key) parts.push(key.toUpperCase());
+    return parts.join("+");
+  };
 
   const updateDir = (dir, changes) => {
     setMovementConfig(prev => ({
@@ -44,28 +61,14 @@ const CameraToolPage = () => {
     }));
   };
 
-  const handleModeChange = (mode) => {
-    setMovementMode(mode);
-    setMovementConfig(emptyMovement);
-    setActiveDir("up");
-
-    if(mode === "custom"){
-      requestAnimationFrame(()=> inputRef.current?.focus());
-    }
-  };
-
-  useEffect(()=>{
-    if(movementMode === "custom"){
-      requestAnimationFrame(()=> inputRef.current?.focus());
-    }
-  },[movementMode, activeDir]);
+  // =============================
+  // MOVIMIENTO KEY LISTENER
+  // =============================
 
   useEffect(()=>{
     if(movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
-
-      if(!activeDir) return;
 
       if(e.key === "Backspace"){
         e.preventDefault();
@@ -109,111 +112,29 @@ const CameraToolPage = () => {
 
   },[movementMode, activeDir]);
 
-  const renderKey = (dir) => {
-    if (movementMode === "numpad") {
-      return { up:"8", down:"2", left:"4", right:"6" }[dir];
-    }
-    return { up:"↑", down:"↓", left:"←", right:"→" }[dir];
-  };
+  // =============================
+  // GENERATE
+  // =============================
 
   const buildCombo = (cfg) => {
     let parts = [];
 
-    if (cfg.ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
-    if (cfg.shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
-    if (cfg.alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-
-    cfg.keys.forEach(k=>{
-      parts.push(`keyboard.${k}?0`);
-    });
-
-    return parts.join(" & ");
-  };
-
-  const buildDisplay = (ctrl, shift, alt, key) => {
-    let parts = [];
-    if (ctrl) parts.push("CTRL");
-    if (shift) parts.push("SHIFT");
-    if (alt) parts.push("ALT");
-    if (key) parts.push(key.toUpperCase());
-    return parts.join("+");
-  };
-
-  const getDirDisplay = (dir) => {
-    const cfg = movementConfig[dir];
-
-    let parts = [];
     if (cfg.ctrl) parts.push("CTRL");
     if (cfg.shift) parts.push("SHIFT");
     if (cfg.alt) parts.push("ALT");
-    if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
+
+    if(cfg.keys.length) parts.push(...cfg.keys);
 
     return parts.join("+");
-  };
-
-  const buildInputValue = () => {
-    const cfg = movementConfig[activeDir];
-
-    let parts = [];
-    if (cfg.ctrl) parts.push("CTRL");
-    if (cfg.shift) parts.push("SHIFT");
-    if (cfg.alt) parts.push("ALT");
-    if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
-
-    return parts.join("+");
-  };
-
-  const handleInputChange = (value) => {
-    const keys = value
-      .toLowerCase()
-      .replace(/ctrl|shift|alt/gi,'')
-      .split('+')
-      .map(k=>k.trim())
-      .filter(k=>k);
-
-    updateDir(activeDir,{keys});
   };
 
   const handleGenerate = () => {
-    if (!fileContent) {
-      alert("Sube archivo primero");
-      return;
-    }
-
-    const result = generateControls(fileContent,{
-      camera:buildCombo({
-        ctrl:camCtrl,
-        shift:camShift,
-        alt:camAlt,
-        keys:[normalizeKey(camKey)]
-      }),
-      teleport:buildCombo({
-        ctrl:tpCtrl,
-        shift:tpShift,
-        alt:tpAlt,
-        keys:[normalizeKey(tpKey)]
-      }),
-      movement:{
-        up:buildCombo(movementConfig.up),
-        down:buildCombo(movementConfig.down),
-        left:buildCombo(movementConfig.left),
-        right:buildCombo(movementConfig.right),
-      }
-    });
-
-    setOutput(result);
+    alert("Generado (debug)");
   };
 
-  const renderToggle = (label,val,setter)=>(
-    <button
-      onClick={()=>setter(!val)}
-      className={`px-4 py-2 rounded-lg border ${
-        val?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-      }`}
-    >
-      {label}
-    </button>
-  );
+  // =============================
+  // RENDER
+  // =============================
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-white">
@@ -226,166 +147,99 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* CAMERA ZERO */}
+        {/* ================= CAMERA ZERO ================= */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
 
-          <div className="flex gap-4 items-center flex-wrap">
-            {renderToggle("CTRL",camCtrl,setCamCtrl)}
-            {renderToggle("SHIFT",camShift,setCamShift)}
-            {renderToggle("ALT",camAlt,setCamAlt)}
+          <h2 className="mb-4 text-lg font-semibold">
+            Activar Cámara Cero
+          </h2>
+
+          <div className="flex gap-4 items-center">
+
+            <button onClick={()=>setCamCtrl(!camCtrl)} className="px-4 py-2 border rounded-lg">
+              CTRL
+            </button>
+
+            <button onClick={()=>setCamShift(!camShift)} className="px-4 py-2 border rounded-lg">
+              SHIFT
+            </button>
+
+            <button onClick={()=>setCamAlt(!camAlt)} className="px-4 py-2 border rounded-lg">
+              ALT
+            </button>
 
             <input
               value={camKey}
-              onChange={(e)=>setCamKey(e.target.value.toLowerCase())}
-              className="w-20 h-14 text-center bg-black border border-yellow-400 rounded-lg"
+              onChange={(e)=>setCamKey(e.target.value)}
+              className="w-20 h-14 text-center bg-black border rounded-lg"
             />
 
-            <div className="text-yellow-400 text-sm">
+            <div className="text-yellow-400">
               {buildDisplay(camCtrl,camShift,camAlt,camKey)}
             </div>
+
           </div>
         </div>
 
-        {/* TELEPORT */}
+        {/* ================= TELEPORT ================= */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
 
-          <div className="flex gap-4 items-center flex-wrap">
-            {renderToggle("CTRL",tpCtrl,setTpCtrl)}
-            {renderToggle("SHIFT",tpShift,setTpShift)}
-            {renderToggle("ALT",tpAlt,setTpAlt)}
+          <h2 className="mb-4 text-lg font-semibold">
+            Teleport
+          </h2>
 
-            <button
-              onClick={()=>setTpKey("f9")}
-              className={`px-4 py-2 rounded-lg border ${
-                tpKey==="f9"?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-              }`}
-            >
+          <div className="flex gap-4 items-center">
+
+            <button onClick={()=>setTpCtrl(!tpCtrl)} className="px-4 py-2 border rounded-lg">
+              CTRL
+            </button>
+
+            <button onClick={()=>setTpShift(!tpShift)} className="px-4 py-2 border rounded-lg">
+              SHIFT
+            </button>
+
+            <button onClick={()=>setTpAlt(!tpAlt)} className="px-4 py-2 border rounded-lg">
+              ALT
+            </button>
+
+            <button onClick={()=>setTpKey("f9")} className="px-4 py-2 border rounded-lg">
               F9
             </button>
 
             <input
               value={tpKey}
-              onChange={(e)=>setTpKey(e.target.value.toLowerCase())}
-              className="w-20 h-14 text-center bg-black border border-yellow-400 rounded-lg"
+              onChange={(e)=>setTpKey(e.target.value)}
+              className="w-20 h-14 text-center bg-black border rounded-lg"
             />
 
-            <div className="text-yellow-400 text-sm">
+            <div className="text-yellow-400">
               {buildDisplay(tpCtrl,tpShift,tpAlt,tpKey)}
             </div>
+
           </div>
         </div>
 
-        {/* MOVIMIENTO */}
+        {/* ================= MOVIMIENTO ================= */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
-          <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
+          <h2 className="mb-4 text-lg font-semibold">
+            Movimiento Cámara
+          </h2>
 
-          <div className="grid grid-cols-2">
-
-            {/* IZQUIERDA */}
-            <div className="flex flex-col pt-10">
-
-              <div className="flex gap-4 mb-8">
-                {["flechas","numpad","custom"].map(mode => (
-                  <button
-                    key={mode}
-                    onClick={()=>handleModeChange(mode)}
-                    className={`px-4 py-2 rounded-lg border ${
-                      movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                ))}
-              </div>
-
-              {movementMode === "custom" && (
-                <div className="flex gap-4">
-                  {["ctrl","shift","alt"].map(mod=>(
-                    <button
-                      key={mod}
-                      onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
-                      className={`px-4 py-2 rounded-lg border ${
-                        movementConfig[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-                      }`}
-                    >
-                      {mod.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-            </div>
-
-            {/* DERECHA */}
-            <div className="flex justify-end pr-20">
-
-              <div className="grid grid-cols-3 gap-4">
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("up")} className="w-20 h-20 border rounded-lg">
-                  <div className="flex flex-col items-center">
-                    ↑
-                    <span className="text-[10px]">{getDirDisplay("up")}</span>
-                  </div>
-                </button>
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("left")} className="w-20 h-20 border rounded-lg">
-                  <div className="flex flex-col items-center">
-                    ←
-                    <span className="text-[10px]">{getDirDisplay("left")}</span>
-                  </div>
-                </button>
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("right")} className="w-20 h-20 border rounded-lg">
-                  <div className="flex flex-col items-center">
-                    →
-                    <span className="text-[10px]">{getDirDisplay("right")}</span>
-                  </div>
-                </button>
-
-                <div></div>
-
-                <button onClick={()=>setActiveDir("down")} className="w-20 h-20 border rounded-lg">
-                  <div className="flex flex-col items-center">
-                    ↓
-                    <span className="text-[10px]">{getDirDisplay("down")}</span>
-                  </div>
-                </button>
-
-                <div></div>
-
-              </div>
-
-            </div>
-
+          <div className="flex gap-4">
+            <button onClick={()=>setMovementMode("flechas")}>flechas</button>
+            <button onClick={()=>setMovementMode("numpad")}>numpad</button>
+            <button onClick={()=>setMovementMode("custom")}>custom</button>
           </div>
-
-          {movementMode === "custom" && (
-            <div className="flex justify-center mt-6">
-              <input
-                ref={inputRef}
-                value={buildInputValue()}
-                onChange={(e)=>handleInputChange(e.target.value)}
-                className="w-60 h-12 text-center bg-black border border-yellow-400 rounded-lg"
-              />
-            </div>
-          )}
 
         </div>
 
-        <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
+        <button
+          onClick={handleGenerate}
+          className="bg-blue-600 px-6 py-3 rounded-lg"
+        >
           Generar Controls
         </button>
-
-        <pre className="mt-6 text-xs">{output}</pre>
 
       </div>
 
