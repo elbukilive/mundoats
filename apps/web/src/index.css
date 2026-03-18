@@ -1,0 +1,79 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 10 14% 8%;
+    --foreground: 220 13% 91%;
+    --primary: 59 89% 50%;
+    --primary-foreground: 10 14% 8%;
+    --secondary: 200 100% 50%;
+    --secondary-foreground: 10 14% 8%;
+    --accent: 280 85% 55%;
+    --accent-foreground: 220 13% 91%;
+    --muted: 220 13% 23%;
+    --muted-foreground: 220 13% 71%;
+    --card: 10 14% 15%;
+    --card-foreground: 220 13% 91%;
+    --popover: 10 14% 12%;
+    --popover-foreground: 220 13% 91%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 59 89% 50%;
+    --radius: 0.5rem;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 13% 91%;
+    
+    /* Code Block Custom Properties */
+    --code-bg: 222 47% 11%; /* slate-900 equivalent */
+    --code-border: 215 28% 17%; /* slate-800 equivalent */
+    --code-text: 210 40% 98%; /* slate-50 equivalent */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    overflow-x: clip;
+  }
+}
+
+@layer utilities {
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(59 89% 50% / 0.3);
+  }
+  
+  .glow-primary-sm {
+    box-shadow: 0 0 10px hsl(59 89% 50% / 0.2);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(280 85% 55% / 0.3);
+  }
+  
+  .glow-secondary {
+    box-shadow: 0 0 20px hsl(200 100% 50% / 0.3);
+  }
+
+  /* Enhanced Glow Utilities for Buttons */
+  .shadow-glow {
+    box-shadow: 0 0 15px hsl(var(--primary) / 0.5);
+  }
+  
+  .shadow-glow-lg {
+    box-shadow: 0 0 25px hsl(var(--primary) / 0.75);
+  }
+}
