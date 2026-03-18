@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
-
 import { generateControls } from '@/utils/ControlsGenerator.js';
 
 const CameraToolPage = () => {
@@ -11,6 +10,12 @@ const CameraToolPage = () => {
   const [fileContent, setFileContent] = useState('');
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
+
+  // 🎮 Estados UI
+  const [ctrl, setCtrl] = useState(true);
+  const [shift, setShift] = useState(true);
+  const [alt, setAlt] = useState(false);
+  const [key, setKey] = useState("z");
 
   // 📂 subir archivo
   const handleFileUpload = (e) => {
@@ -26,14 +31,36 @@ const CameraToolPage = () => {
     reader.readAsText(file);
   };
 
-  // 🚀 generar controls
+  // 🧠 construir combo
+  const buildCombo = () => {
+    let parts = [];
+
+    if (ctrl) {
+      parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
+    }
+
+    if (shift) {
+      parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
+    }
+
+    if (alt) {
+      parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
+    }
+
+    parts.push(`keyboard.${key}?0`);
+
+    return parts.join(" & ");
+  };
+
+  // 🚀 generar
   const handleGenerate = () => {
     if (!fileContent) {
       alert("Sube un archivo primero");
       return;
     }
 
-    const result = generateControls(fileContent, "keyboard.z?0");
+    const combo = buildCombo();
+    const result = generateControls(fileContent, combo);
     setOutput(result);
   };
 
@@ -57,66 +84,119 @@ const CameraToolPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[#0b0b0f] text-white">
 
       <Header />
 
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-6">
 
-        <h1 className="text-3xl font-bold mb-6">
+        <h1 className="text-3xl font-bold mb-8">
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* 📂 subir */}
-        <div className="mb-6">
+        {/* 📂 Upload */}
+        <div
+          onClick={() => fileInputRef.current.click()}
+          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 hover:border-yellow-400 transition text-center"
+        >
           <input
             type="file"
             accept=".sii,.txt"
             ref={fileInputRef}
             onChange={handleFileUpload}
-            className="mb-4"
+            className="hidden"
           />
 
-          {fileName && (
-            <p className="text-green-400">
-              Archivo: {fileName}
-            </p>
-          )}
+          <p className="text-gray-400">
+            {fileName ? `📂 ${fileName}` : "Click para subir controls.sii"}
+          </p>
         </div>
 
-        {/* 🚀 botón */}
+        {/* 🎮 CONTROLES UI */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+
+          <h2 className="mb-4 font-semibold text-lg">Cámara Cero</h2>
+
+          <div className="flex items-center gap-6 flex-wrap">
+
+            {/* CTRL */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ctrl}
+                onChange={() => setCtrl(!ctrl)}
+              />
+              CTRL
+            </label>
+
+            {/* SHIFT */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={shift}
+                onChange={() => setShift(!shift)}
+              />
+              SHIFT
+            </label>
+
+            {/* ALT */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={alt}
+                onChange={() => setAlt(!alt)}
+              />
+              ALT
+            </label>
+
+            {/* TECLA */}
+            <input
+              value={key}
+              onChange={(e) => setKey(e.target.value.toLowerCase())}
+              className="bg-black border border-gray-600 rounded px-4 py-2 w-20 text-center"
+              placeholder="z"
+            />
+
+          </div>
+        </div>
+
+        {/* 🚀 BOTÓN */}
         <button
           onClick={handleGenerate}
-          className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded mb-6"
+          className="bg-gradient-to-r from-blue-500 to-blue-700 px-6 py-3 rounded-lg shadow-lg hover:scale-105 transition mb-6"
         >
           Generar Controls
         </button>
 
-        {/* 📄 preview */}
+        {/* 📄 OUTPUT */}
         {output && (
-          <>
+          <div className="bg-[#111] border border-gray-700 rounded-xl p-4">
+
             <textarea
               value={output}
               readOnly
-              className="w-full h-64 bg-gray-900 p-4 rounded mb-4 text-sm"
+              className="w-full h-64 bg-black p-4 rounded text-sm mb-4"
             />
 
             <div className="flex gap-4">
+
               <button
                 onClick={handleCopy}
-                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
+                className="bg-green-600 px-4 py-2 rounded hover:bg-green-700"
               >
                 Copiar
               </button>
 
               <button
                 onClick={handleDownload}
-                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded"
+                className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700"
               >
                 Descargar
               </button>
+
             </div>
-          </>
+
+          </div>
         )}
 
       </div>
