@@ -1,211 +1,132 @@
-import React, { useState, useRef } from 'react';
-import Header from '@/components/Header.jsx';
-import Footer from '@/components/Footer.jsx';
-import { generateControls } from '@/utils/ControlsGenerator.js';
+{/* ===== MOVIMIENTO ===== */}
+<div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
-const CameraToolPage = () => {
+  <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-  const fileInputRef = useRef(null);
+  {/* SELECTOR */}
+  <div className="flex gap-4 mb-6">
 
-  const [fileContent, setFileContent] = useState('');
-  const [output, setOutput] = useState('');
-  const [fileName, setFileName] = useState('');
+    {["arrows","numpad","custom"].map(mode => (
+      <button
+        key={mode}
+        onClick={() => {
+          setMoveMode(mode);
+          setMvCustom(mode === "custom");
+        }}
+        className={`px-4 py-2 rounded-lg border transition-all
+        ${moveMode === mode
+          ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]"
+          : "border-gray-600 hover:border-yellow-400/40"
+        }`}
+      >
+        {mode === "arrows" ? "Flechas" : mode === "numpad" ? "Numpad" : "Custom"}
+      </button>
+    ))}
 
-  // ===== ACTIVAR CÁMARA =====
-  const [camKey, setCamKey] = useState("0");
+  </div>
 
-  // ===== TELEPORT =====
-  const [tpCtrl, setTpCtrl] = useState(true);
-  const [tpShift, setTpShift] = useState(false);
-  const [tpAlt, setTpAlt] = useState(false);
-  const [tpUseF9, setTpUseF9] = useState(true);
-  const [tpKey, setTpKey] = useState("f9");
+  {/* MODIFIERS */}
+  <div className="flex gap-4 mb-6">
 
-  // ===== MOVIMIENTO =====
-  const [moveMode, setMoveMode] = useState("arrows"); // arrows | numpad
+    {[
+      { label: "CTRL", state: mvCtrl, set: setMvCtrl },
+      { label: "SHIFT", state: mvShift, set: setMvShift },
+      { label: "ALT", state: mvAlt, set: setMvAlt }
+    ].map((item, i) => (
+      <label
+        key={i}
+        className={`px-3 py-2 rounded-lg border cursor-pointer transition-all
+        ${item.state
+          ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]"
+          : "border-gray-600 hover:border-yellow-400/40"
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={item.state}
+          onChange={() => item.set(!item.state)}
+          className="hidden"
+        />
+        {item.label}
+      </label>
+    ))}
 
-  const [mvCtrl, setMvCtrl] = useState(false);
-  const [mvShift, setMvShift] = useState(false);
-  const [mvAlt, setMvAlt] = useState(false);
+  </div>
 
-  const [mvCustom, setMvCustom] = useState(false);
+  {/* GRID VISUAL */}
+  <div className="flex justify-center">
 
-  const [mvUp, setMvUp] = useState("");
-  const [mvDown, setMvDown] = useState("");
-  const [mvLeft, setMvLeft] = useState("");
-  const [mvRight, setMvRight] = useState("");
+    <div className="grid grid-cols-3 gap-3">
 
-  // ================= FILE =================
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+      {/* EMPTY */}
+      <div></div>
 
-    setFileName(file.name);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFileContent(event.target.result);
-    };
-    reader.readAsText(file);
-  };
-
-  // ================= BUILD =================
-  const buildCombo = (ctrl, shift, alt, key) => {
-    let parts = [];
-
-    if (ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
-    if (shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
-    if (alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-
-    if (key) parts.push(`keyboard.${key}?0`);
-
-    return parts.join(" & ");
-  };
-
-  // ===== MOVEMENT KEYS =====
-  const getMovementKeys = () => {
-    if (mvCustom) {
-      return {
-        up: mvUp,
-        down: mvDown,
-        left: mvLeft,
-        right: mvRight
-      };
-    }
-
-    if (moveMode === "arrows") {
-      return {
-        up: "up",
-        down: "down",
-        left: "left",
-        right: "right"
-      };
-    }
-
-    return {
-      up: "kp_2",
-      down: "kp_5",
-      left: "kp_4",
-      right: "kp_6"
-    };
-  };
-
-  // ================= GENERATE =================
-  const handleGenerate = () => {
-    if (!fileContent) {
-      alert("Sube un archivo primero");
-      return;
-    }
-
-    const cameraCombo = buildCombo(false, false, false, camKey);
-    const teleportCombo = buildCombo(tpCtrl, tpShift, tpAlt, tpKey);
-
-    const mvKeys = getMovementKeys();
-
-    const movement = {
-      up: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.up),
-      down: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.down),
-      left: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.left),
-      right: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.right),
-    };
-
-    const result = generateControls(fileContent, {
-      camera: cameraCombo,
-      teleport: teleportCombo,
-      movement
-    });
-
-    setOutput(result);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#0b0b0f] text-white">
-
-      <Header />
-
-      <div className="max-w-5xl mx-auto p-6">
-
-        <h1 className="text-3xl font-bold mb-8">
-          🎮 Controls Generator (Camera Zero)
-        </h1>
-
-        {/* UPLOAD */}
-        <div
-          onClick={() => fileInputRef.current.click()}
-          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 text-center"
-        >
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden"/>
-          <p className="text-gray-400">
-            {fileName ? fileName : "Click para subir controls.sii"}
-          </p>
-        </div>
-
-        {/* ===== MOVIMIENTO ===== */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-
-          <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
-
-          {/* MODE */}
-          <div className="flex gap-4 mb-4">
-
-            <button
-              onClick={() => { setMoveMode("arrows"); setMvCustom(false); }}
-              className={`px-4 py-2 rounded-lg border ${moveMode === "arrows" ? "border-yellow-400" : "border-gray-600"}`}
-            >
-              Flechas
-            </button>
-
-            <button
-              onClick={() => { setMoveMode("numpad"); setMvCustom(false); }}
-              className={`px-4 py-2 rounded-lg border ${moveMode === "numpad" ? "border-yellow-400" : "border-gray-600"}`}
-            >
-              Numpad
-            </button>
-
-            <button
-              onClick={() => setMvCustom(!mvCustom)}
-              className={`px-4 py-2 rounded-lg border ${mvCustom ? "border-yellow-400" : "border-gray-600"}`}
-            >
-              Custom
-            </button>
-
-          </div>
-
-          {/* MODIFIERS */}
-          <div className="flex gap-4 mb-4">
-
-            <label><input type="checkbox" checked={mvCtrl} onChange={() => setMvCtrl(!mvCtrl)}/> CTRL</label>
-            <label><input type="checkbox" checked={mvShift} onChange={() => setMvShift(!mvShift)}/> SHIFT</label>
-            <label><input type="checkbox" checked={mvAlt} onChange={() => setMvAlt(!mvAlt)}/> ALT</label>
-
-          </div>
-
-          {/* INPUTS */}
-          {mvCustom && (
-            <div className="grid grid-cols-4 gap-4">
-              <input placeholder="UP" value={mvUp} onChange={(e)=>setMvUp(e.target.value)} />
-              <input placeholder="DOWN" value={mvDown} onChange={(e)=>setMvDown(e.target.value)} />
-              <input placeholder="LEFT" value={mvLeft} onChange={(e)=>setMvLeft(e.target.value)} />
-              <input placeholder="RIGHT" value={mvRight} onChange={(e)=>setMvRight(e.target.value)} />
-            </div>
-          )}
-
-        </div>
-
-        <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
-          Generar Controls
-        </button>
-
-        {output && (
-          <textarea value={output} readOnly className="w-full h-64 mt-6 bg-black p-4"/>
-        )}
-
+      {/* UP */}
+      <div className="w-16 h-16 flex items-center justify-center border border-gray-600 rounded-lg bg-black text-xl">
+        ↑
       </div>
 
-      <Footer />
+      <div></div>
+
+      {/* LEFT */}
+      <div className="w-16 h-16 flex items-center justify-center border border-gray-600 rounded-lg bg-black text-xl">
+        ←
+      </div>
+
+      {/* EMPTY */}
+      <div></div>
+
+      {/* RIGHT */}
+      <div className="w-16 h-16 flex items-center justify-center border border-gray-600 rounded-lg bg-black text-xl">
+        →
+      </div>
+
+      <div></div>
+
+      {/* DOWN */}
+      <div className="w-16 h-16 flex items-center justify-center border border-gray-600 rounded-lg bg-black text-xl">
+        ↓
+      </div>
+
+      <div></div>
 
     </div>
-  );
-};
 
-export default CameraToolPage;
+  </div>
+
+  {/* CUSTOM INPUTS */}
+  {mvCustom && (
+    <div className="grid grid-cols-4 gap-4 mt-6">
+
+      <input
+        placeholder="UP"
+        value={mvUp}
+        onChange={(e)=>setMvUp(e.target.value)}
+        className="bg-black border border-gray-600 rounded p-2 text-center"
+      />
+
+      <input
+        placeholder="DOWN"
+        value={mvDown}
+        onChange={(e)=>setMvDown(e.target.value)}
+        className="bg-black border border-gray-600 rounded p-2 text-center"
+      />
+
+      <input
+        placeholder="LEFT"
+        value={mvLeft}
+        onChange={(e)=>setMvLeft(e.target.value)}
+        className="bg-black border border-gray-600 rounded p-2 text-center"
+      />
+
+      <input
+        placeholder="RIGHT"
+        value={mvRight}
+        onChange={(e)=>setMvRight(e.target.value)}
+        className="bg-black border border-gray-600 rounded p-2 text-center"
+      />
+
+    </div>
+  )}
+
+</div>
