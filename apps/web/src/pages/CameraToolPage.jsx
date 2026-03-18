@@ -41,6 +41,7 @@ const CameraToolPage = () => {
     }));
   };
 
+  // ================= MODE CHANGE =================
   const handleModeChange = (mode) => {
     setMovementMode(mode);
 
@@ -48,39 +49,39 @@ const CameraToolPage = () => {
       setMovementConfig(emptyMovement);
       setActiveDir("up");
 
-      setTimeout(()=>{
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
-      },0);
+      });
     }
   };
 
   // ================= AUTO FOCUS =================
-  useEffect(()=>{
-    if(movementMode === "custom"){
-      inputRef.current?.focus();
+  useEffect(() => {
+    if (movementMode === "custom") {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     }
-  },[activeDir]);
+  }, [movementMode, activeDir]);
 
   // ================= KEYBOARD CAPTURE =================
-  useEffect(()=>{
-    if(movementMode !== "custom") return;
+  useEffect(() => {
+    if (movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
 
-      if(!activeDir) return;
+      if (!activeDir) return;
 
-      if(e.key === "Control" || e.key === "Shift" || e.key === "Alt"){
-        return;
-      }
+      if (["Control","Shift","Alt"].includes(e.key)) return;
 
       e.preventDefault();
 
       const key = e.key.toLowerCase();
 
-      setMovementConfig(prev=>{
+      setMovementConfig(prev => {
         const current = prev[activeDir];
 
-        if(current.keys.includes(key)) return prev;
+        if (current.keys.includes(key)) return prev;
 
         return {
           ...prev,
@@ -93,10 +94,9 @@ const CameraToolPage = () => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-
     return () => window.removeEventListener("keydown", handleKeyDown);
 
-  },[movementMode, activeDir]);
+  }, [movementMode, activeDir]);
 
   // ================= VISUAL =================
   const renderKey = (dir) => {
@@ -213,8 +213,12 @@ const CameraToolPage = () => {
 
           <div className="flex gap-4 mb-6">
             {["flechas","numpad","custom"].map(mode => (
-              <button key={mode} onClick={()=>handleModeChange(mode)}
-                className={`px-4 py-2 rounded-lg border ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}>
+              <button
+                key={mode}
+                onMouseDown={(e)=>e.preventDefault()}
+                onClick={()=>handleModeChange(mode)}
+                className={`px-4 py-2 rounded-lg border ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
+              >
                 {mode}
               </button>
             ))}
@@ -225,6 +229,7 @@ const CameraToolPage = () => {
               {["ctrl","shift","alt"].map(mod=>(
                 <button
                   key={mod}
+                  onMouseDown={(e)=>e.preventDefault()}
                   onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
                   className={`px-4 py-2 rounded-lg border ${movementConfig[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
                 >
@@ -240,28 +245,28 @@ const CameraToolPage = () => {
 
               <div></div>
 
-              <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
                 <div className="text-xl">{renderKey("up")}</div>
                 <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
                 <div className="text-xl">{renderKey("left")}</div>
                 <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.left)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
                 <div className="text-xl">{renderKey("right")}</div>
                 <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.right)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
                 <div className="text-xl">{renderKey("down")}</div>
                 <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.down)}</div>
               </button>
