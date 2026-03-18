@@ -18,7 +18,6 @@ const CameraToolPage = () => {
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpUseF9, setTpUseF9] = useState(true);
   const [tpKey, setTpKey] = useState("f9");
 
   // ================= MOVIMIENTO =================
@@ -55,7 +54,6 @@ const CameraToolPage = () => {
     return parts.join("+");
   };
 
-  // ================= BUILD =================
   const buildCombo = (cfg) => {
     let parts = [];
 
@@ -90,15 +88,13 @@ const CameraToolPage = () => {
     }
 
     const result = generateControls(fileContent, {
-      camera: camKey,
-      teleport: {
-        combo: buildCombo({
-          ctrl: tpCtrl,
-          shift: tpShift,
-          alt: tpAlt,
-          key: tpUseF9 ? "f9" : tpKey
-        })
-      },
+      camera: `keyboard.${camKey}?0`,
+      teleport: buildCombo({
+        ctrl: tpCtrl,
+        shift: tpShift,
+        alt: tpAlt,
+        key: tpKey
+      }),
       movement: {
         up: buildCombo(movementConfig.up),
         down: buildCombo(movementConfig.down),
@@ -130,17 +126,22 @@ const CameraToolPage = () => {
           <p className="text-gray-400">{fileName || "Click para subir controls.sii"}</p>
         </div>
 
-        {/* CAMERA ZERO */}
+        {/* CAMERA ZERO (UI ORIGINAL) */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
           <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
-          <input
-            value={camKey}
-            onChange={(e)=>setCamKey(e.target.value)}
-            className="w-20 h-14 text-center bg-black border border-yellow-400 rounded-lg"
-          />
+
+          <div className="flex gap-4 items-center">
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">CTRL</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
+
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              {camKey}
+            </div>
+          </div>
         </div>
 
-        {/* TELEPORT */}
+        {/* TELEPORT (UI ORIGINAL) */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
           <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
 
@@ -162,31 +163,15 @@ const CameraToolPage = () => {
           </div>
 
           <div className="flex gap-3 items-center">
-            <button
-              onClick={()=>setTpUseF9(true)}
-              className={`px-4 py-2 rounded-lg border ${tpUseF9?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
-            >
-              F9
-            </button>
+            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">F9</button>
 
-            {!tpUseF9 && (
-              <input
-                value={tpKey}
-                onChange={(e)=>setTpKey(e.target.value)}
-                className="w-20 h-12 text-center bg-black border border-yellow-400 rounded"
-              />
-            )}
-
-            <button
-              onClick={()=>setTpUseF9(false)}
-              className="px-3 py-2 border border-gray-600 rounded"
-            >
-              Custom
-            </button>
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              {tpKey.toUpperCase()}
+            </div>
           </div>
         </div>
 
-        {/* MOVIMIENTO */}
+        {/* MOVIMIENTO (PRO + VISUAL) */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
           <h2 className="mb-4 font-semibold text-lg">Movimiento Cámara</h2>
