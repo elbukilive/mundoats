@@ -12,16 +12,13 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
 
-  // CAMERA ZERO
   const [camKey] = useState("0");
 
-  // TELEPORT
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
   const [tpKey] = useState("f9");
 
-  // MOVIMIENTO
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
@@ -41,7 +38,7 @@ const CameraToolPage = () => {
     }));
   };
 
-  // ✅ FIX: reset SIEMPRE al cambiar modo
+  // 🔥 FIX RESET REAL
   const handleModeChange = (mode) => {
     setMovementMode(mode);
     setMovementConfig(emptyMovement);
@@ -58,7 +55,7 @@ const CameraToolPage = () => {
     }
   },[movementMode, activeDir]);
 
-  // ✅ FIX: backspace funcional
+  // 🔥 FIX BACKSPACE
   useEffect(()=>{
     if(movementMode !== "custom") return;
 
@@ -66,14 +63,15 @@ const CameraToolPage = () => {
 
       if(!activeDir) return;
 
-      if (e.key === "Backspace") {
-        setMovementConfig(prev => {
+      if(e.key === "Backspace"){
+        e.preventDefault();
+        setMovementConfig(prev=>{
           const current = prev[activeDir];
           return {
             ...prev,
             [activeDir]: {
               ...current,
-              keys: current.keys.slice(0, -1)
+              keys: current.keys.slice(0,-1)
             }
           };
         });
@@ -105,7 +103,7 @@ const CameraToolPage = () => {
 
   },[movementMode, activeDir]);
 
-  // ✅ FIX: numpad correcto
+  // 🔥 FIX NUMPAD
   const renderKey = (dir) => {
     if (movementMode === "numpad") {
       return { up:"8", down:"2", left:"4", right:"6" }[dir];
@@ -150,31 +148,6 @@ const CameraToolPage = () => {
     updateDir(activeDir,{keys});
   };
 
-  const handleGenerate = () => {
-    if (!fileContent) {
-      alert("Sube archivo primero");
-      return;
-    }
-
-    const result = generateControls(fileContent,{
-      camera:`keyboard.${camKey}?0`,
-      teleport:buildCombo({
-        ctrl:tpCtrl,
-        shift:tpShift,
-        alt:tpAlt,
-        keys:[tpKey]
-      }),
-      movement:{
-        up:buildCombo(movementConfig.up),
-        down:buildCombo(movementConfig.down),
-        left:buildCombo(movementConfig.left),
-        right:buildCombo(movementConfig.right),
-      }
-    });
-
-    setOutput(result);
-  };
-
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-white">
 
@@ -191,23 +164,18 @@ const CameraToolPage = () => {
 
           <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          {/* 🔥 GRID REAL COMPARTIDO */}
           <div className="grid grid-cols-2 h-[260px]">
 
             {/* IZQUIERDA */}
             <div className="grid grid-rows-3">
 
-              {/* TOP (alineado con ↑) */}
+              {/* TOP */}
               <div className="flex items-start gap-4">
                 {["flechas","numpad","custom"].map(mode => (
                   <button
                     key={mode}
                     onClick={()=>handleModeChange(mode)}
-                    className={`px-4 py-2 rounded-lg border ${
-                      movementMode===mode
-                        ? "border-yellow-400 bg-yellow-400/10"
-                        : "border-gray-600"
-                    }`}
+                    className={`px-4 py-2 rounded-lg border ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
                   >
                     {mode}
                   </button>
@@ -216,17 +184,13 @@ const CameraToolPage = () => {
 
               <div></div>
 
-              {/* BOTTOM (alineado con ↓) */}
+              {/* BOTTOM */}
               <div className="flex items-end gap-4">
                 {movementMode === "custom" && ["ctrl","shift","alt"].map(mod=>(
                   <button
                     key={mod}
                     onClick={()=>updateDir(activeDir,{[mod]:!movementConfig[activeDir][mod]})}
-                    className={`px-4 py-2 rounded-lg border ${
-                      movementConfig[activeDir][mod]
-                        ? "border-yellow-400 bg-yellow-400/10"
-                        : "border-gray-600"
-                    }`}
+                    className={`px-4 py-2 rounded-lg border ${movementConfig[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
                   >
                     {mod.toUpperCase()}
                   </button>
@@ -271,6 +235,18 @@ const CameraToolPage = () => {
             </div>
 
           </div>
+
+          {movementMode === "custom" && (
+            <div className="flex justify-center mt-6">
+              <input
+                ref={inputRef}
+                value={buildInputValue()}
+                onChange={(e)=>handleInputChange(e.target.value)}
+                placeholder="CTRL+C"
+                className="w-60 h-12 text-center bg-black border border-yellow-400 rounded-lg"
+              />
+            </div>
+          )}
 
         </div>
 
