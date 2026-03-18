@@ -11,13 +11,11 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
 
-  // 🎮 estados
   const [ctrl, setCtrl] = useState(true);
   const [shift, setShift] = useState(true);
   const [alt, setAlt] = useState(false);
   const [key, setKey] = useState("z");
 
-  // 📂 upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -31,7 +29,6 @@ const CameraToolPage = () => {
     reader.readAsText(file);
   };
 
-  // 🧠 build combo
   const buildCombo = () => {
     let parts = [];
 
@@ -44,7 +41,6 @@ const CameraToolPage = () => {
     return parts.join(" & ");
   };
 
-  // 🚀 generate
   const handleGenerate = () => {
     if (!fileContent) {
       alert("Sube un archivo primero");
@@ -56,13 +52,11 @@ const CameraToolPage = () => {
     setOutput(result);
   };
 
-  // 📋 copy
   const handleCopy = () => {
     navigator.clipboard.writeText(output);
     alert("Copiado!");
   };
 
-  // ⬇ download
   const handleDownload = () => {
     const blob = new Blob([output], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -86,7 +80,7 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* 📂 Upload */}
+        {/* Upload */}
         <div
           onClick={() => fileInputRef.current.click()}
           className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 hover:border-yellow-400 transition text-center"
@@ -104,54 +98,54 @@ const CameraToolPage = () => {
           </p>
         </div>
 
-        {/* 🎮 CONTROLES */}
+        {/* CONTROLES */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
-          <h2 className="mb-4 font-semibold text-lg">Cámara Cero</h2>
+          <h2 className="mb-6 font-semibold text-lg">Cámara Cero</h2>
 
-          <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-8 flex-wrap">
 
-            {/* CTRL */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={ctrl}
-                onChange={() => setCtrl(!ctrl)}
-              />
-              CTRL
-            </label>
+            {/* CHECKS */}
+            <div className="flex gap-4">
 
-            {/* SHIFT */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={shift}
-                onChange={() => setShift(!shift)}
-              />
-              SHIFT
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={ctrl} onChange={() => setCtrl(!ctrl)} />
+                CTRL
+              </label>
 
-            {/* ALT */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={alt}
-                onChange={() => setAlt(!alt)}
-              />
-              ALT
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={shift} onChange={() => setShift(!shift)} />
+                SHIFT
+              </label>
 
-            {/* 🔥 INPUT + F KEYS */}
-            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={alt} onChange={() => setAlt(!alt)} />
+                ALT
+              </label>
+
+            </div>
+
+            {/* INPUT PRO + F KEYS */}
+            <div className="flex flex-col items-center gap-4">
 
               <input
                 value={key}
                 onChange={(e) => setKey(e.target.value.slice(0,1).toLowerCase())}
-                className="bg-black border border-gray-600 rounded px-4 py-2 w-24 text-center"
-                placeholder="z"
+                placeholder="Z"
+                className="w-24 h-14 text-center text-xl font-semibold 
+                bg-black text-white 
+                border border-gray-600 
+                rounded-lg outline-none
+                transition-all duration-200
+
+                focus:border-yellow-400
+                focus:ring-2 focus:ring-yellow-400/30
+                focus:shadow-[0_0_12px_rgba(255,204,0,0.4)]
+
+                hover:border-yellow-400/50"
               />
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-center">
 
                 {[
                   "f1","f2","f3","f4","f5","f6",
@@ -160,11 +154,10 @@ const CameraToolPage = () => {
                   <button
                     key={fKey}
                     onClick={() => setKey(fKey)}
-                    className={`px-3 py-1 rounded border text-sm transition 
-                      ${key === fKey 
-                        ? "bg-yellow-500 text-black border-yellow-400" 
-                        : "bg-[#111] border-gray-600 hover:border-yellow-400"}
-                    `}
+                    className={`px-3 py-1 rounded border text-sm transition-all duration-200
+                    ${key === fKey 
+                      ? "bg-yellow-500 text-black border-yellow-400 shadow-[0_0_10px_rgba(255,204,0,0.6)]" 
+                      : "bg-[#111] border-gray-600 hover:border-yellow-400 hover:shadow-[0_0_8px_rgba(255,204,0,0.3)]"}`}
                   >
                     {fKey.toUpperCase()}
                   </button>
@@ -177,7 +170,7 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* 🚀 BOTÓN */}
+        {/* BOTÓN */}
         <button
           onClick={handleGenerate}
           className="bg-gradient-to-r from-blue-500 to-blue-700 px-6 py-3 rounded-lg shadow-lg hover:scale-105 transition mb-6"
@@ -185,7 +178,7 @@ const CameraToolPage = () => {
           Generar Controls
         </button>
 
-        {/* 📄 OUTPUT */}
+        {/* OUTPUT */}
         {output && (
           <div className="bg-[#111] border border-gray-700 rounded-xl p-4">
 
@@ -197,17 +190,11 @@ const CameraToolPage = () => {
 
             <div className="flex gap-4">
 
-              <button
-                onClick={handleCopy}
-                className="bg-green-600 px-4 py-2 rounded hover:bg-green-700"
-              >
+              <button onClick={handleCopy} className="bg-green-600 px-4 py-2 rounded hover:bg-green-700">
                 Copiar
               </button>
 
-              <button
-                onClick={handleDownload}
-                className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700"
-              >
+              <button onClick={handleDownload} className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700">
                 Descargar
               </button>
 
