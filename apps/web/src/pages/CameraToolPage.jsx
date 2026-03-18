@@ -136,13 +136,13 @@ const CameraToolPage = () => {
 
           <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          <div className="grid grid-cols-2">
+          <div className="grid grid-cols-2 items-center">
 
             {/* IZQUIERDA */}
-            <div className="flex flex-col">
+            <div className="flex flex-col justify-center gap-10">
 
-              {/* 🔥 TOP alineado con ↑ */}
-              <div className="flex gap-4 mb-20">
+              {/* TOP (alineado con ↑) */}
+              <div className="flex gap-4">
                 {["flechas","numpad","custom"].map(mode => (
                   <button
                     key={mode}
@@ -154,9 +154,9 @@ const CameraToolPage = () => {
                 ))}
               </div>
 
-              {/* 🔥 BOTTOM alineado con ↓ */}
+              {/* BOTTOM (alineado con ↓) */}
               {movementMode === "custom" && (
-                <div className="flex gap-4 mt-16">
+                <div className="flex gap-4">
                   {["ctrl","shift","alt"].map(mod=>(
                     <button
                       key={mod}
@@ -172,32 +172,33 @@ const CameraToolPage = () => {
             </div>
 
             {/* DERECHA */}
-            <div className="flex justify-end pr-20 pt-4">
+            <div className="flex justify-end pr-20">
 
               <div className="grid grid-cols-3 gap-4">
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  ↑
+                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  <div>{renderKey("up")}</div>
+                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
                 </button>
 
                 <div></div>
 
                 <button onClick={()=>setActiveDir("left")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
-                  ←
+                  {renderKey("left")}
                 </button>
 
                 <div></div>
 
                 <button onClick={()=>setActiveDir("right")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
-                  →
+                  {renderKey("right")}
                 </button>
 
                 <div></div>
 
                 <button onClick={()=>setActiveDir("down")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
-                  ↓
+                  {renderKey("down")}
                 </button>
 
                 <div></div>
@@ -207,6 +208,17 @@ const CameraToolPage = () => {
             </div>
 
           </div>
+
+          {movementMode === "custom" && (
+            <div className="flex justify-center mt-6">
+              <input
+                ref={inputRef}
+                value={renderCombo(movementConfig[activeDir])}
+                readOnly
+                className="w-60 h-12 text-center bg-black border border-yellow-400 rounded-lg"
+              />
+            </div>
+          )}
 
         </div>
 
