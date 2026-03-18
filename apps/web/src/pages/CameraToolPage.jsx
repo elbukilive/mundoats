@@ -123,8 +123,11 @@ const CameraToolPage = () => {
           <input
             value={camKey}
             onChange={(e) => setCamKey(e.target.value.slice(0,1))}
-            className="w-24 h-14 text-center text-xl bg-black border border-gray-600 rounded-lg
-            focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
+            className="w-24 h-14 text-center text-xl font-semibold 
+            bg-black text-white 
+            border border-yellow-400 rounded-lg
+            shadow-[0_0_12px_rgba(255,204,0,0.5)]
+            outline-none"
           />
 
         </div>
@@ -190,7 +193,7 @@ const CameraToolPage = () => {
               className={`w-24 h-14 text-center text-xl font-semibold 
               bg-black text-white border rounded-lg transition-all
               ${tpUseF9
-                ? "border-gray-800 opacity-40 cursor-not-allowed"
+                ? "border-yellow-400 shadow-[0_0_12px_rgba(255,204,0,0.5)]"
                 : "border-gray-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
               }`}
             />
