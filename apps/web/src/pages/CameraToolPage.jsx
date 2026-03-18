@@ -1,303 +1,328 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import { generateControls } from '@/utils/ControlsGenerator.js';
 
 const CameraToolPage = () => {
+  const inputRef = useRef(null);
 
-  // =========================
-  // CONTROL DE FOCO REAL
-  // =========================
-  const [activeSection, setActiveSection] = useState(null); 
-  // camera | teleport | movement
+  const [fileContent, setFileContent] = useState('');
+  const [output, setOutput] = useState('');
 
-  // =========================
-  // CAMERA
-  // =========================
-  const [cam, setCam] = useState({
-    ctrl:false, shift:false, alt:false, key:""
-  });
+  // Camera Zero
+  const [camCtrl, setCamCtrl] = useState(false);
+  const [camShift, setCamShift] = useState(false);
+  const [camAlt, setCamAlt] = useState(false);
+  const [camKey] = useState('0');
 
-  // =========================
-  // TELEPORT
-  // =========================
-  const [tp, setTp] = useState({
-    ctrl:false, shift:false, alt:false, key:"f9"
-  });
+  // Teleport
+  const [tpCtrl, setTpCtrl] = useState(true);
+  const [tpShift, setTpShift] = useState(false);
+  const [tpAlt, setTpAlt] = useState(false);
+  const [tpKey, setTpKey] = useState('f9');
 
-  // =========================
-  // MOVEMENT
-  // =========================
-  const [movementMode, setMovementMode] = useState("flechas");
-  const [activeDir, setActiveDir] = useState("up");
+  // Movement
+  const [movementMode, setMovementMode] = useState('flechas');
+  const [activeDir, setActiveDir] = useState('up');
 
-  const empty = {
-    up:{ctrl:false,shift:false,alt:false,keys:[]},
-    down:{ctrl:false,shift:false,alt:false,keys:[]},
-    left:{ctrl:false,shift:false,alt:false,keys:[]},
-    right:{ctrl:false,shift:false,alt:false,keys:[]},
+  const emptyMovement = {
+    up: { ctrl: false, shift: false, alt: false, keys: [] },
+    down: { ctrl: false, shift: false, alt: false, keys: [] },
+    left: { ctrl: false, shift: false, alt: false, keys: [] },
+    right: { ctrl: false, shift: false, alt: false, keys: [] },
   };
 
-  const [movement, setMovement] = useState(empty);
+  const [movementConfig, setMovementConfig] = useState(emptyMovement);
 
-  // =========================
-  // KEYBOARD CAPTURE REAL
-  // =========================
-  useEffect(()=>{
+  const updateDir = (dir, changes) => {
+    setMovementConfig((prev) => ({
+      ...prev,
+      [dir]: { ...prev[dir], ...changes },
+    }));
+  };
 
-    const handle = (e) => {
+  const handleModeChange = (mode) => {
+    setMovementMode(mode);
+    setActiveDir('up');
 
-      if(!activeSection) return;
+    if (mode === 'custom') {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  // Custom mode key listener
+  useEffect(() => {
+    if (movementMode !== 'custom') return;
+
+    const handleKeyDown = (e) => {
+      if (!activeDir) return;
+
+      // Modifiers toggle
+      if (e.key === 'Control') {
+        updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl });
+        return;
+      }
+      if (e.key === 'Shift') {
+        updateDir(activeDir, { shift: !movementConfig[activeDir].shift });
+        return;
+      }
+      if (e.key === 'Alt') {
+        updateDir(activeDir, { alt: !movementConfig[activeDir].alt });
+        return;
+      }
+
+      e.preventDefault();
 
       const key = e.key.toLowerCase();
 
-      // ===== CAMERA =====
-      if(activeSection === "camera"){
-        if(key === "control") setCam(p=>({...p,ctrl:!p.ctrl}));
-        else if(key === "shift") setCam(p=>({...p,shift:!p.shift}));
-        else if(key === "alt") setCam(p=>({...p,alt:!p.alt}));
-        else setCam(p=>({...p,key}));
-      }
+      setMovementConfig((prev) => {
+        const current = prev[activeDir];
+        const alreadyHas = current.keys.includes(key);
 
-      // ===== TELEPORT =====
-      if(activeSection === "teleport"){
-        if(key === "control") setTp(p=>({...p,ctrl:!p.ctrl}));
-        else if(key === "shift") setTp(p=>({...p,shift:!p.shift}));
-        else if(key === "alt") setTp(p=>({...p,alt:!p.alt}));
-        else if(key === "f9") setTp(p=>({...p,key:p.key==="f9"?"":"f9"}));
-        else setTp(p=>({...p,key}));
-      }
-
-      // ===== MOVEMENT =====
-      if(activeSection === "movement"){
-
-        const current = movement[activeDir];
-
-        if(key === "control"){
-          setMovement(p=>({...p,[activeDir]:{...current,ctrl:!current.ctrl}}));
-          return;
-        }
-
-        if(key === "shift"){
-          setMovement(p=>({...p,[activeDir]:{...current,shift:!current.shift}}));
-          return;
-        }
-
-        if(key === "alt"){
-          setMovement(p=>({...p,[activeDir]:{...current,alt:!current.alt}}));
-          return;
-        }
-
-        if(key === "backspace"){
-          setMovement(p=>({
-            ...p,
-            [activeDir]:{
-              ...current,
-              keys: current.keys.slice(0,-1)
-            }
-          }));
-          return;
-        }
-
-        if(!current.keys.includes(key)){
-          setMovement(p=>({
-            ...p,
-            [activeDir]:{
-              ...current,
-              keys:[...current.keys,key]
-            }
-          }));
-        }
-      }
-
+        return {
+          ...prev,
+          [activeDir]: {
+            ...current,
+            keys: alreadyHas
+              ? current.keys.filter((k) => k !== key)
+              : [...current.keys, key],
+          },
+        };
+      });
     };
 
-    window.addEventListener("keydown", handle);
-    return ()=>window.removeEventListener("keydown", handle);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movementMode, activeDir, movementConfig]);
 
-  },[activeSection, movement, activeDir]);
+  // ────────────────────────────────────────────────
+  // Visual rendering helpers
+  // ────────────────────────────────────────────────
 
-  // =========================
-  // HELPERS
-  // =========================
-
-  const glow = (v) =>
-    v ? "border-yellow-400 bg-yellow-400/10" : "border-gray-600";
-
-  const display = (cfg) => {
-    let p=[];
-    if(cfg.ctrl) p.push("CTRL");
-    if(cfg.shift) p.push("SHIFT");
-    if(cfg.alt) p.push("ALT");
-    if(cfg.key) p.push(cfg.key.toUpperCase());
-    return p.join("+");
-  };
-
-  const displayMove = (cfg) => {
-    let p=[];
-    if(cfg.ctrl) p.push("CTRL");
-    if(cfg.shift) p.push("SHIFT");
-    if(cfg.alt) p.push("ALT");
-    if(cfg.keys.length) p.push(...cfg.keys.map(k=>k.toUpperCase()));
-    return p.join("+");
-  };
-
-  const arrow = (d) => {
-    if(movementMode==="numpad"){
-      return {up:"8",down:"2",left:"4",right:"6"}[d];
+  const renderKey = (dir) => {
+    if (movementMode === 'numpad') {
+      return { up: '8', down: '2', left: '4', right: '6' }[dir];
     }
-    return {up:"↑",down:"↓",left:"←",right:"→"}[d];
+    return { up: '↑', down: '↓', left: '←', right: '→' }[dir];
   };
 
-  // =========================
-  // UI
-  // =========================
+  const renderHint = (dir) => {
+    const cfg = movementConfig[dir];
+    const parts = [];
+
+    if (cfg.ctrl) parts.push('CTRL');
+    if (cfg.shift) parts.push('SHIFT');
+    if (cfg.alt) parts.push('ALT');
+    if (cfg.keys.length) parts.push(...cfg.keys.map((k) => k.toUpperCase()));
+
+    return parts.length ? parts.join(' + ') : '—';
+  };
+
+  const buildCombo = (cfg) => {
+    const parts = [];
+
+    if (cfg.ctrl) parts.push('(keyboard.lctrl?0 | keyboard.rctrl?0)');
+    if (cfg.shift) parts.push('(keyboard.lshift?0 | keyboard.rshift?0)');
+    if (cfg.alt) parts.push('(keyboard.lalt?0 | keyboard.ralt?0)');
+
+    cfg.keys.forEach((k) => {
+      parts.push(`keyboard.${k}?0`);
+    });
+
+    if (parts.length === 0) return '';
+    return parts.join(' & ');
+  };
+
+  const handleGenerate = () => {
+    const config = {
+      camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camKey] }),
+      teleport: tpKey
+        ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpKey] })
+        : '',
+      movement: {
+        up: buildCombo(movementConfig.up),
+        down: buildCombo(movementConfig.down),
+        left: buildCombo(movementConfig.left),
+        right: buildCombo(movementConfig.right),
+      },
+    };
+
+    const result = generateControls(fileContent, config);
+    setOutput(result);
+  };
+
+  // ────────────────────────────────────────────────
+  // RENDER
+  // ────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-white">
-
       <Header />
 
       <div className="max-w-5xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-8">🎮 Controls Generator (Camera Zero)</h1>
 
-        <h1 className="text-3xl mb-8 font-bold">
-          🎮 Controls Generator (Camera Zero)
-        </h1>
-
-        {/* CAMERA */}
+        {/* CAMERA ZERO */}
         <div className="bg-[#111] p-6 rounded-xl mb-6">
-          <h2 className="mb-4">Activar Cámara Cero</h2>
+          <h2 className="mb-4 font-semibold">Activar Cámara Cero</h2>
+          <div className="flex flex-wrap gap-4 items-center">
+            {[
+              ['CTRL', camCtrl, setCamCtrl],
+              ['SHIFT', camShift, setCamShift],
+              ['ALT', camAlt, setCamAlt],
+            ].map(([label, value, setter]) => (
+              <button
+                key={label}
+                onClick={() => setter(!value)}
+                className={`px-5 py-2 border rounded-lg transition-colors ${
+                  value ? 'border-yellow-400 bg-yellow-400/10' : 'border-gray-600 hover:bg-gray-800'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
 
-          <div className="flex gap-4 items-center">
-
-            <button onClick={()=>{setCam(p=>({...p,ctrl:!p.ctrl}));setActiveSection("camera")}}
-              className={`px-4 py-2 border rounded ${glow(cam.ctrl)}`}>CTRL</button>
-
-            <button onClick={()=>{setCam(p=>({...p,shift:!p.shift}));setActiveSection("camera")}}
-              className={`px-4 py-2 border rounded ${glow(cam.shift)}`}>SHIFT</button>
-
-            <button onClick={()=>{setCam(p=>({...p,alt:!p.alt}));setActiveSection("camera")}}
-              className={`px-4 py-2 border rounded ${glow(cam.alt)}`}>ALT</button>
-
-            <button onClick={()=>setActiveSection("camera")}
-              className="w-20 h-14 border border-yellow-400 rounded">
-              {cam.key || "?"}
-            </button>
-
-            <span className="text-yellow-400">{display(cam)}</span>
-
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.4)] font-mono">
+              {camKey}
+            </div>
           </div>
         </div>
 
         {/* TELEPORT */}
         <div className="bg-[#111] p-6 rounded-xl mb-6">
-          <h2 className="mb-4">Teleport</h2>
+          <h2 className="mb-4 font-semibold">Teleport</h2>
+          <div className="flex flex-wrap gap-4 items-center">
+            {[
+              ['CTRL', tpCtrl, setTpCtrl],
+              ['SHIFT', tpShift, setTpShift],
+              ['ALT', tpAlt, setTpAlt],
+            ].map(([label, value, setter]) => (
+              <button
+                key={label}
+                onClick={() => setter(!value)}
+                className={`px-5 py-2 border rounded-lg transition-colors ${
+                  value ? 'border-yellow-400 bg-yellow-400/10' : 'border-gray-600 hover:bg-gray-800'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
 
-          <div className="flex gap-4 items-center">
-
-            <button onClick={()=>{setTp(p=>({...p,ctrl:!p.ctrl}));setActiveSection("teleport")}}
-              className={`px-4 py-2 border rounded ${glow(tp.ctrl)}`}>CTRL</button>
-
-            <button onClick={()=>{setTp(p=>({...p,shift:!p.shift}));setActiveSection("teleport")}}
-              className={`px-4 py-2 border rounded ${glow(tp.shift)}`}>SHIFT</button>
-
-            <button onClick={()=>{setTp(p=>({...p,alt:!p.alt}));setActiveSection("teleport")}}
-              className={`px-4 py-2 border rounded ${glow(tp.alt)}`}>ALT</button>
-
-            <button onClick={()=>setTp(p=>({...p,key:p.key==="f9"?"":"f9"}))}
-              className={`px-4 py-2 border rounded ${glow(tp.key==="f9")}`}>F9</button>
-
-            <button onClick={()=>setActiveSection("teleport")}
-              className="w-20 h-14 border border-yellow-400 rounded">
-              {tp.key || "?"}
+            <button
+              onClick={() => setTpKey(tpKey ? '' : 'f9')}
+              className={`w-20 h-14 flex items-center justify-center border rounded-lg font-mono transition-all ${
+                tpKey
+                  ? 'border-yellow-400 shadow-[0_0_10px_rgba(255,204,0,0.4)]'
+                  : 'border-gray-600'
+              }`}
+            >
+              {tpKey || 'OFF'}
             </button>
-
-            <span className="text-yellow-400">{display(tp)}</span>
-
           </div>
         </div>
 
-        {/* MOVEMENT */}
-        <div className="bg-[#111] p-6 rounded-xl mb-6">
+        {/* MOVIMIENTO */}
+        <div className="bg-[#111] p-6 rounded-xl mb-8">
+          <h2 className="mb-6 font-semibold">Movimiento Cámara</h2>
 
-          <h2 className="mb-4">Movimiento Cámara</h2>
-
-          <div className="flex gap-4 mb-6">
-            {["flechas","numpad","custom"].map(m=>(
-              <button key={m}
-                onClick={()=>setMovementMode(m)}
-                className={`px-4 py-2 border rounded ${
-                  movementMode===m?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-                }`}>
-                {m}
+          <div className="flex gap-4 mb-8">
+            {['flechas', 'numpad', 'custom'].map((mode) => (
+              <button
+                key={mode}
+                onClick={() => handleModeChange(mode)}
+                className={`px-5 py-2 border rounded-lg transition-colors ${
+                  movementMode === mode
+                    ? 'border-yellow-400 bg-yellow-400/10'
+                    : 'border-gray-600 hover:bg-gray-800'
+                }`}
+              >
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
             ))}
           </div>
 
-          <div className="flex gap-4 mb-6">
+          <div className="flex justify-center mb-6">
+            <div className="grid grid-cols-3 gap-3 w-fit">
+              <div /> {/* empty top-left */}
 
-            {["ctrl","shift","alt"].map(mod=>(
-              <button key={mod}
-                onClick={()=>{
-                  const c = movement[activeDir];
-                  setMovement(p=>({
-                    ...p,
-                    [activeDir]:{...c,[mod]:!c[mod]}
-                  }));
-                  setActiveSection("movement");
-                }}
-                className={`px-4 py-2 border rounded ${
-                  movement[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-                }`}>
-                {mod.toUpperCase()}
-              </button>
-            ))}
-
-          </div>
-
-          <div className="flex justify-center">
-
-            <div className="grid grid-cols-3 gap-4">
-
-              <div></div>
-
-              <button onClick={()=>{setActiveDir("up");setActiveSection("movement")}}
-                className="w-20 h-20 border rounded">
-                {arrow("up")}
-                <div className="text-xs">{displayMove(movement.up)}</div>
+              <button
+                onClick={() => setActiveDir('up')}
+                className={`w-24 h-24 flex flex-col items-center justify-center border rounded-xl text-3xl font-bold transition-all ${
+                  activeDir === 'up'
+                    ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]'
+                    : 'border-gray-700 bg-gray-900/50 hover:bg-gray-800'
+                }`}
+              >
+                {renderKey('up')}
+                <div className="text-xs mt-2 opacity-80">{renderHint('up')}</div>
               </button>
 
-              <div></div>
+              <div /> {/* empty */}
 
-              <button onClick={()=>{setActiveDir("left");setActiveSection("movement")}}
-                className="w-20 h-20 border rounded">
-                {arrow("left")}
-                <div className="text-xs">{displayMove(movement.left)}</div>
+              <button
+                onClick={() => setActiveDir('left')}
+                className={`w-24 h-24 flex flex-col items-center justify-center border rounded-xl text-3xl font-bold transition-all ${
+                  activeDir === 'left'
+                    ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]'
+                    : 'border-gray-700 bg-gray-900/50 hover:bg-gray-800'
+                }`}
+              >
+                {renderKey('left')}
+                <div className="text-xs mt-2 opacity-80">{renderHint('left')}</div>
               </button>
 
-              <div></div>
-
-              <button onClick={()=>{setActiveDir("right");setActiveSection("movement")}}
-                className="w-20 h-20 border rounded">
-                {arrow("right")}
-                <div className="text-xs">{displayMove(movement.right)}</div>
+              <button
+                onClick={() => setActiveDir('down')}
+                className={`w-24 h-24 flex flex-col items-center justify-center border rounded-xl text-3xl font-bold transition-all ${
+                  activeDir === 'down'
+                    ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]'
+                    : 'border-gray-700 bg-gray-900/50 hover:bg-gray-800'
+                }`}
+              >
+                {renderKey('down')}
+                <div className="text-xs mt-2 opacity-80">{renderHint('down')}</div>
               </button>
 
-              <div></div>
-
-              <button onClick={()=>{setActiveDir("down");setActiveSection("movement")}}
-                className="w-20 h-20 border rounded">
-                {arrow("down")}
-                <div className="text-xs">{displayMove(movement.down)}</div>
+              <button
+                onClick={() => setActiveDir('right')}
+                className={`w-24 h-24 flex flex-col items-center justify-center border rounded-xl text-3xl font-bold transition-all ${
+                  activeDir === 'right'
+                    ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]'
+                    : 'border-gray-700 bg-gray-900/50 hover:bg-gray-800'
+                }`}
+              >
+                {renderKey('right')}
+                <div className="text-xs mt-2 opacity-80">{renderHint('right')}</div>
               </button>
-
-              <div></div>
-
             </div>
-
           </div>
 
+          {movementMode === 'custom' && (
+            <div className="flex justify-center">
+              <input
+                ref={inputRef}
+                value={renderHint(activeDir)}
+                readOnly
+                className="w-80 h-12 text-center text-lg bg-black border-2 border-yellow-500/70 rounded-xl focus:outline-none focus:border-yellow-400 shadow-[0_0_10px_rgba(255,204,0,0.3)]"
+              />
+            </div>
+          )}
         </div>
 
+        <div className="flex justify-center">
+          <button
+            onClick={handleGenerate}
+            className="bg-blue-600 hover:bg-blue-700 px-10 py-4 rounded-xl text-lg font-semibold transition-colors"
+          >
+            Generar Controls
+          </button>
+        </div>
+
+        {output && (
+          <div className="mt-10 bg-black/60 p-6 rounded-xl border border-gray-700">
+            <pre className="text-green-300 font-mono whitespace-pre-wrap">{output}</pre>
+          </div>
+        )}
       </div>
 
       <Footer />
