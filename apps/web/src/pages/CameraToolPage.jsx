@@ -5,57 +5,135 @@ import Footer from '@/components/Footer.jsx';
 const CameraToolPage = () => {
 
   // =========================
-  // STATES
+  // CONTROL DE FOCO REAL
   // =========================
+  const [activeSection, setActiveSection] = useState(null); 
+  // camera | teleport | movement
 
-  const [activeInput, setActiveInput] = useState(null); 
-  // "camera" | "teleport" | "movement"
-
+  // =========================
   // CAMERA
-  const [camCtrl, setCamCtrl] = useState(false);
-  const [camShift, setCamShift] = useState(false);
-  const [camAlt, setCamAlt] = useState(false);
-  const [camKey, setCamKey] = useState("");
+  // =========================
+  const [cam, setCam] = useState({
+    ctrl:false, shift:false, alt:false, key:""
+  });
 
+  // =========================
   // TELEPORT
-  const [tpCtrl, setTpCtrl] = useState(false);
-  const [tpShift, setTpShift] = useState(false);
-  const [tpAlt, setTpAlt] = useState(false);
-  const [tpKey, setTpKey] = useState("f9");
+  // =========================
+  const [tp, setTp] = useState({
+    ctrl:false, shift:false, alt:false, key:"f9"
+  });
 
+  // =========================
   // MOVEMENT
+  // =========================
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
-  const emptyMovement = {
-    up: { ctrl:false, shift:false, alt:false, keys:[] },
-    down: { ctrl:false, shift:false, alt:false, keys:[] },
-    left: { ctrl:false, shift:false, alt:false, keys:[] },
-    right: { ctrl:false, shift:false, alt:false, keys:[] },
+  const empty = {
+    up:{ctrl:false,shift:false,alt:false,keys:[]},
+    down:{ctrl:false,shift:false,alt:false,keys:[]},
+    left:{ctrl:false,shift:false,alt:false,keys:[]},
+    right:{ctrl:false,shift:false,alt:false,keys:[]},
   };
 
-  const [movementConfig, setMovementConfig] = useState(emptyMovement);
+  const [movement, setMovement] = useState(empty);
+
+  // =========================
+  // KEYBOARD CAPTURE REAL
+  // =========================
+  useEffect(()=>{
+
+    const handle = (e) => {
+
+      if(!activeSection) return;
+
+      const key = e.key.toLowerCase();
+
+      // ===== CAMERA =====
+      if(activeSection === "camera"){
+        if(key === "control") setCam(p=>({...p,ctrl:!p.ctrl}));
+        else if(key === "shift") setCam(p=>({...p,shift:!p.shift}));
+        else if(key === "alt") setCam(p=>({...p,alt:!p.alt}));
+        else setCam(p=>({...p,key}));
+      }
+
+      // ===== TELEPORT =====
+      if(activeSection === "teleport"){
+        if(key === "control") setTp(p=>({...p,ctrl:!p.ctrl}));
+        else if(key === "shift") setTp(p=>({...p,shift:!p.shift}));
+        else if(key === "alt") setTp(p=>({...p,alt:!p.alt}));
+        else if(key === "f9") setTp(p=>({...p,key:p.key==="f9"?"":"f9"}));
+        else setTp(p=>({...p,key}));
+      }
+
+      // ===== MOVEMENT =====
+      if(activeSection === "movement"){
+
+        const current = movement[activeDir];
+
+        if(key === "control"){
+          setMovement(p=>({...p,[activeDir]:{...current,ctrl:!current.ctrl}}));
+          return;
+        }
+
+        if(key === "shift"){
+          setMovement(p=>({...p,[activeDir]:{...current,shift:!current.shift}}));
+          return;
+        }
+
+        if(key === "alt"){
+          setMovement(p=>({...p,[activeDir]:{...current,alt:!current.alt}}));
+          return;
+        }
+
+        if(key === "backspace"){
+          setMovement(p=>({
+            ...p,
+            [activeDir]:{
+              ...current,
+              keys: current.keys.slice(0,-1)
+            }
+          }));
+          return;
+        }
+
+        if(!current.keys.includes(key)){
+          setMovement(p=>({
+            ...p,
+            [activeDir]:{
+              ...current,
+              keys:[...current.keys,key]
+            }
+          }));
+        }
+      }
+
+    };
+
+    window.addEventListener("keydown", handle);
+    return ()=>window.removeEventListener("keydown", handle);
+
+  },[activeSection, movement, activeDir]);
 
   // =========================
   // HELPERS
   // =========================
 
-  const normalize = (k) => k.toLowerCase();
-
-  const toggleClass = (v) =>
+  const glow = (v) =>
     v ? "border-yellow-400 bg-yellow-400/10" : "border-gray-600";
 
-  const buildDisplay = (ctrl,shift,alt,key) => {
-    let p = [];
-    if(ctrl) p.push("CTRL");
-    if(shift) p.push("SHIFT");
-    if(alt) p.push("ALT");
-    if(key) p.push(key.toUpperCase());
+  const display = (cfg) => {
+    let p=[];
+    if(cfg.ctrl) p.push("CTRL");
+    if(cfg.shift) p.push("SHIFT");
+    if(cfg.alt) p.push("ALT");
+    if(cfg.key) p.push(cfg.key.toUpperCase());
     return p.join("+");
   };
 
-  const buildMovementDisplay = (cfg) => {
-    let p = [];
+  const displayMove = (cfg) => {
+    let p=[];
     if(cfg.ctrl) p.push("CTRL");
     if(cfg.shift) p.push("SHIFT");
     if(cfg.alt) p.push("ALT");
@@ -63,105 +141,12 @@ const CameraToolPage = () => {
     return p.join("+");
   };
 
-  const updateDir = (dir, changes) => {
-    setMovementConfig(prev=>({
-      ...prev,
-      [dir]: { ...prev[dir], ...changes }
-    }));
+  const arrow = (d) => {
+    if(movementMode==="numpad"){
+      return {up:"8",down:"2",left:"4",right:"6"}[d];
+    }
+    return {up:"↑",down:"↓",left:"←",right:"→"}[d];
   };
-
-  // =========================
-  // KEYBOARD GLOBAL
-  // =========================
-
-  useEffect(()=>{
-
-    const handleKey = (e) => {
-
-      // evitar que capture si no hay foco
-      if(!activeInput) return;
-
-      const key = normalize(e.key);
-
-      // CAMERA
-      if(activeInput === "camera"){
-        if(key === "control") setCamCtrl(v=>!v);
-        else if(key === "shift") setCamShift(v=>!v);
-        else if(key === "alt") setCamAlt(v=>!v);
-        else setCamKey(key);
-      }
-
-      // TELEPORT
-      if(activeInput === "teleport"){
-        if(key === "control") setTpCtrl(v=>!v);
-        else if(key === "shift") setTpShift(v=>!v);
-        else if(key === "alt") setTpAlt(v=>!v);
-        else if(key === "f9"){
-          setTpKey(prev => prev==="f9" ? "" : "f9");
-        }
-        else setTpKey(key);
-      }
-
-      // MOVEMENT
-      if(activeInput === "movement"){
-        if(key === "control"){
-          updateDir(activeDir,{ ctrl: !movementConfig[activeDir].ctrl });
-          return;
-        }
-        if(key === "shift"){
-          updateDir(activeDir,{ shift: !movementConfig[activeDir].shift });
-          return;
-        }
-        if(key === "alt"){
-          updateDir(activeDir,{ alt: !movementConfig[activeDir].alt });
-          return;
-        }
-
-        if(key === "backspace"){
-          updateDir(activeDir,{
-            keys: movementConfig[activeDir].keys.slice(0,-1)
-          });
-          return;
-        }
-
-        const current = movementConfig[activeDir];
-        if(current.keys.includes(key)) return;
-
-        updateDir(activeDir,{
-          keys:[...current.keys,key]
-        });
-      }
-
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return ()=>window.removeEventListener("keydown", handleKey);
-
-  },[activeInput, movementConfig, activeDir]);
-
-  // =========================
-  // RENDER KEY
-  // =========================
-
-  const renderKey = (dir) => {
-    return { up:"↑", down:"↓", left:"←", right:"→" }[dir];
-  };
-
-  // =========================
-  // COMPONENT BUTTON
-  // =========================
-
-  const Btn = ({label, val, set, section}) => (
-    <button
-      onClick={()=>{
-        set(v=>!v);
-        setActiveInput(section);
-      }}
-      className={`px-4 py-2 rounded-lg border ${toggleClass(val)}`}
-    >
-      {label}
-    </button>
-  );
 
   // =========================
   // UI
@@ -174,79 +159,75 @@ const CameraToolPage = () => {
 
       <div className="max-w-5xl mx-auto p-6">
 
-        <h1 className="text-3xl font-bold mb-8">
+        <h1 className="text-3xl mb-8 font-bold">
           🎮 Controls Generator (Camera Zero)
         </h1>
 
         {/* CAMERA */}
-        <div className="bg-[#111] border p-6 rounded-xl mb-6">
+        <div className="bg-[#111] p-6 rounded-xl mb-6">
           <h2 className="mb-4">Activar Cámara Cero</h2>
 
           <div className="flex gap-4 items-center">
 
-            <Btn label="CTRL" val={camCtrl} set={setCamCtrl} section="camera"/>
-            <Btn label="SHIFT" val={camShift} set={setCamShift} section="camera"/>
-            <Btn label="ALT" val={camAlt} set={setCamAlt} section="camera"/>
+            <button onClick={()=>{setCam(p=>({...p,ctrl:!p.ctrl}));setActiveSection("camera")}}
+              className={`px-4 py-2 border rounded ${glow(cam.ctrl)}`}>CTRL</button>
 
-            <button
-              onClick={()=>setActiveInput("camera")}
-              className="w-20 h-14 border border-yellow-400 rounded-lg"
-            >
-              {camKey || "?"}
+            <button onClick={()=>{setCam(p=>({...p,shift:!p.shift}));setActiveSection("camera")}}
+              className={`px-4 py-2 border rounded ${glow(cam.shift)}`}>SHIFT</button>
+
+            <button onClick={()=>{setCam(p=>({...p,alt:!p.alt}));setActiveSection("camera")}}
+              className={`px-4 py-2 border rounded ${glow(cam.alt)}`}>ALT</button>
+
+            <button onClick={()=>setActiveSection("camera")}
+              className="w-20 h-14 border border-yellow-400 rounded">
+              {cam.key || "?"}
             </button>
 
-            <span className="text-yellow-400">
-              {buildDisplay(camCtrl,camShift,camAlt,camKey)}
-            </span>
+            <span className="text-yellow-400">{display(cam)}</span>
 
           </div>
         </div>
 
         {/* TELEPORT */}
-        <div className="bg-[#111] border p-6 rounded-xl mb-6">
+        <div className="bg-[#111] p-6 rounded-xl mb-6">
           <h2 className="mb-4">Teleport</h2>
 
           <div className="flex gap-4 items-center">
 
-            <Btn label="CTRL" val={tpCtrl} set={setTpCtrl} section="teleport"/>
-            <Btn label="SHIFT" val={tpShift} set={setTpShift} section="teleport"/>
-            <Btn label="ALT" val={tpAlt} set={setTpAlt} section="teleport"/>
+            <button onClick={()=>{setTp(p=>({...p,ctrl:!p.ctrl}));setActiveSection("teleport")}}
+              className={`px-4 py-2 border rounded ${glow(tp.ctrl)}`}>CTRL</button>
 
-            <button
-              onClick={()=>setTpKey(prev=>prev==="f9"?"":"f9")}
-              className={`px-4 py-2 border rounded-lg ${toggleClass(tpKey==="f9")}`}
-            >
-              F9
+            <button onClick={()=>{setTp(p=>({...p,shift:!p.shift}));setActiveSection("teleport")}}
+              className={`px-4 py-2 border rounded ${glow(tp.shift)}`}>SHIFT</button>
+
+            <button onClick={()=>{setTp(p=>({...p,alt:!p.alt}));setActiveSection("teleport")}}
+              className={`px-4 py-2 border rounded ${glow(tp.alt)}`}>ALT</button>
+
+            <button onClick={()=>setTp(p=>({...p,key:p.key==="f9"?"":"f9"}))}
+              className={`px-4 py-2 border rounded ${glow(tp.key==="f9")}`}>F9</button>
+
+            <button onClick={()=>setActiveSection("teleport")}
+              className="w-20 h-14 border border-yellow-400 rounded">
+              {tp.key || "?"}
             </button>
 
-            <button
-              onClick={()=>setActiveInput("teleport")}
-              className="w-20 h-14 border border-yellow-400 rounded-lg"
-            >
-              {tpKey || "?"}
-            </button>
-
-            <span className="text-yellow-400">
-              {buildDisplay(tpCtrl,tpShift,tpAlt,tpKey)}
-            </span>
+            <span className="text-yellow-400">{display(tp)}</span>
 
           </div>
         </div>
 
         {/* MOVEMENT */}
-        <div className="bg-[#111] border p-6 rounded-xl mb-6">
+        <div className="bg-[#111] p-6 rounded-xl mb-6">
 
           <h2 className="mb-4">Movimiento Cámara</h2>
 
           <div className="flex gap-4 mb-6">
-            {["flechas","custom"].map(m=>(
-              <button
-                key={m}
+            {["flechas","numpad","custom"].map(m=>(
+              <button key={m}
                 onClick={()=>setMovementMode(m)}
-                className={`px-4 py-2 border rounded-lg ${
+                className={`px-4 py-2 border rounded ${
                   movementMode===m?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
-                }`}
-              >
+                }`}>
                 {m}
               </button>
             ))}
@@ -254,20 +235,22 @@ const CameraToolPage = () => {
 
           <div className="flex gap-4 mb-6">
 
-            <Btn label="CTRL" val={movementConfig[activeDir].ctrl}
-              set={()=>updateDir(activeDir,{ctrl:!movementConfig[activeDir].ctrl})}
-              section="movement"
-            />
-
-            <Btn label="SHIFT" val={movementConfig[activeDir].shift}
-              set={()=>updateDir(activeDir,{shift:!movementConfig[activeDir].shift})}
-              section="movement"
-            />
-
-            <Btn label="ALT" val={movementConfig[activeDir].alt}
-              set={()=>updateDir(activeDir,{alt:!movementConfig[activeDir].alt})}
-              section="movement"
-            />
+            {["ctrl","shift","alt"].map(mod=>(
+              <button key={mod}
+                onClick={()=>{
+                  const c = movement[activeDir];
+                  setMovement(p=>({
+                    ...p,
+                    [activeDir]:{...c,[mod]:!c[mod]}
+                  }));
+                  setActiveSection("movement");
+                }}
+                className={`px-4 py-2 border rounded ${
+                  movement[activeDir][mod]?"border-yellow-400 bg-yellow-400/10":"border-gray-600"
+                }`}>
+                {mod.toUpperCase()}
+              </button>
+            ))}
 
           </div>
 
@@ -277,30 +260,34 @@ const CameraToolPage = () => {
 
               <div></div>
 
-              <button onClick={()=>{setActiveDir("up");setActiveInput("movement");}} className="w-20 h-20 border rounded-lg">
-                ↑
-                <div className="text-xs">{buildMovementDisplay(movementConfig.up)}</div>
+              <button onClick={()=>{setActiveDir("up");setActiveSection("movement")}}
+                className="w-20 h-20 border rounded">
+                {arrow("up")}
+                <div className="text-xs">{displayMove(movement.up)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>{setActiveDir("left");setActiveInput("movement");}} className="w-20 h-20 border rounded-lg">
-                ←
-                <div className="text-xs">{buildMovementDisplay(movementConfig.left)}</div>
+              <button onClick={()=>{setActiveDir("left");setActiveSection("movement")}}
+                className="w-20 h-20 border rounded">
+                {arrow("left")}
+                <div className="text-xs">{displayMove(movement.left)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>{setActiveDir("right");setActiveInput("movement");}} className="w-20 h-20 border rounded-lg">
-                →
-                <div className="text-xs">{buildMovementDisplay(movementConfig.right)}</div>
+              <button onClick={()=>{setActiveDir("right");setActiveSection("movement")}}
+                className="w-20 h-20 border rounded">
+                {arrow("right")}
+                <div className="text-xs">{displayMove(movement.right)}</div>
               </button>
 
               <div></div>
 
-              <button onClick={()=>{setActiveDir("down");setActiveInput("movement");}} className="w-20 h-20 border rounded-lg">
-                ↓
-                <div className="text-xs">{buildMovementDisplay(movementConfig.down)}</div>
+              <button onClick={()=>{setActiveDir("down");setActiveSection("movement")}}
+                className="w-20 h-20 border rounded">
+                {arrow("down")}
+                <div className="text-xs">{displayMove(movement.down)}</div>
               </button>
 
               <div></div>
@@ -314,7 +301,6 @@ const CameraToolPage = () => {
       </div>
 
       <Footer />
-
     </div>
   );
 };
