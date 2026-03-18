@@ -4,33 +4,35 @@ import Footer from '@/components/Footer.jsx';
 import { generateControls } from '@/utils/ControlsGenerator.js';
 
 const CameraToolPage = () => {
-
-  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const customInputRef = useRef(null);
 
   const [fileContent, setFileContent] = useState('');
+  const [fileName, setFileName] = useState('');
   const [output, setOutput] = useState('');
 
-  // CAMERA ZERO
+  // ==================== CAMERA ZERO ====================
   const [camCtrl, setCamCtrl] = useState(false);
   const [camShift, setCamShift] = useState(false);
   const [camAlt, setCamAlt] = useState(false);
-  const [camKey] = useState("0");
+  const camKey = "0";
 
-  // TELEPORT
+  // ==================== TELEPORT ====================
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpKey, setTpKey] = useState("f9");
+  const [tpEnabled, setTpEnabled] = useState(true);
+  const tpKey = "f9";
 
-  // MOVIMIENTO
+  // ==================== MOVIMIENTO ====================
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
   const emptyMovement = {
-    up: { ctrl:false, shift:false, alt:false, keys:[] },
-    down: { ctrl:false, shift:false, alt:false, keys:[] },
-    left: { ctrl:false, shift:false, alt:false, keys:[] },
-    right: { ctrl:false, shift:false, alt:false, keys:[] },
+    up:    { ctrl: false, shift: false, alt: false, keys: [] },
+    down:  { ctrl: false, shift: false, alt: false, keys: [] },
+    left:  { ctrl: false, shift: false, alt: false, keys: [] },
+    right: { ctrl: false, shift: false, alt: false, keys: [] },
   };
 
   const [movementConfig, setMovementConfig] = useState(emptyMovement);
@@ -42,239 +44,265 @@ const CameraToolPage = () => {
     }));
   };
 
+  // Cambiar modo
   const handleModeChange = (mode) => {
     setMovementMode(mode);
     setActiveDir("up");
-
-    if(mode === "custom"){
-      setTimeout(()=>inputRef.current?.focus(), 50);
+    if (mode === "custom") {
+      setTimeout(() => customInputRef.current?.focus(), 80);
     }
   };
 
-  // 🔥 INPUT FUNCIONAL (YA NO BUG)
-  useEffect(()=>{
-    if(movementMode !== "custom") return;
+  // Captura de teclado SOLO en Custom (exacto a lo que pediste)
+  useEffect(() => {
+    if (movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
-      if(!activeDir) return;
+      if (!activeDir) return;
 
-      if(e.key === "Control"){
-        updateDir(activeDir,{ctrl:!movementConfig[activeDir].ctrl});
-        return;
-      }
-
-      if(e.key === "Shift"){
-        updateDir(activeDir,{shift:!movementConfig[activeDir].shift});
-        return;
-      }
-
-      if(e.key === "Alt"){
-        updateDir(activeDir,{alt:!movementConfig[activeDir].alt});
-        return;
-      }
+      // Toggle modificadores
+      if (e.key === "Control") { updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl }); return; }
+      if (e.key === "Shift")   { updateDir(activeDir, { shift: !movementConfig[activeDir].shift }); return; }
+      if (e.key === "Alt")     { updateDir(activeDir, { alt: !movementConfig[activeDir].alt }); return; }
 
       e.preventDefault();
+      const key = e.key.toLowerCase().trim();
 
-      const key = e.key.toLowerCase();
-
-      setMovementConfig(prev=>{
+      setMovementConfig(prev => {
         const current = prev[activeDir];
-
-        if(current.keys.includes(key)){
-          return {
-            ...prev,
-            [activeDir]: {
-              ...current,
-              keys: current.keys.filter(k=>k!==key)
-            }
-          };
-        }
-
+        const hasKey = current.keys.includes(key);
         return {
           ...prev,
           [activeDir]: {
             ...current,
-            keys: [...current.keys, key]
+            keys: hasKey ? current.keys.filter(k => k !== key) : [...current.keys, key]
           }
         };
       });
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return ()=>window.removeEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [movementMode, activeDir, movementConfig]);
 
-  },[movementMode, activeDir, movementConfig]);
-
-  // 🔥 VISUAL KEYS
-  const renderKey = (dir) => {
-    if (movementMode === "numpad") {
-      return { up:"8", down:"2", left:"4", right:"6" }[dir];
-    }
-    return { up:"↑", down:"↓", left:"←", right:"→" }[dir];
+  // Texto que se muestra debajo de cada flecha
+  const getComboText = (dir) => {
+    const cfg = movementConfig[dir];
+    const parts = [];
+    if (cfg.ctrl) parts.push("CTRL");
+    if (cfg.shift) parts.push("SHIFT");
+    if (cfg.alt) parts.push("ALT");
+    parts.push(...cfg.keys.map(k => k.toUpperCase()));
+    return parts.join(" + ") || "—";
   };
 
-  const renderHint = (dir) => {
-    const cfg = movementConfig[dir];
-
-    let parts = [];
-    if(cfg.ctrl) parts.push("CTRL");
-    if(cfg.shift) parts.push("SHIFT");
-    if(cfg.alt) parts.push("ALT");
-    if(cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
-
-    return parts.join("+");
+  // Símbolo visual (flechas o numpad)
+  const getVisualKey = (dir) => {
+    if (movementMode === "numpad") {
+      return { up: "8", down: "2", left: "4", right: "6" }[dir];
+    }
+    return { up: "↑", down: "↓", left: "←", right: "→" }[dir];
   };
 
   const buildCombo = (cfg) => {
-    let parts = [];
-
+    const parts = [];
     if (cfg.ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
     if (cfg.shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
     if (cfg.alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-
-    cfg.keys.forEach(k=>{
-      parts.push(`keyboard.${k}?0`);
-    });
-
-    return parts.join(" & ");
+    cfg.keys.forEach(k => parts.push(`keyboard.${k}?0`));
+    return parts.length ? parts.join(" & ") : "";
   };
 
   const handleGenerate = () => {
-    const result = generateControls(fileContent,{
-      camera: buildCombo({ctrl:camCtrl,shift:camShift,alt:camAlt,keys:[camKey]}),
-      teleport: tpKey ? buildCombo({ctrl:tpCtrl,shift:tpShift,alt:tpAlt,keys:[tpKey]}) : "",
-      movement:{
-        up:buildCombo(movementConfig.up),
-        down:buildCombo(movementConfig.down),
-        left:buildCombo(movementConfig.left),
-        right:buildCombo(movementConfig.right),
-      }
-    });
+    if (!fileContent) {
+      alert("Sube primero tu archivo controls.sii");
+      return;
+    }
 
+    const config = {
+      camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camKey] }),
+      teleport: tpEnabled ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpKey] }) : "",
+      movement: {
+        up:    buildCombo(movementConfig.up),
+        down:  buildCombo(movementConfig.down),
+        left:  buildCombo(movementConfig.left),
+        right: buildCombo(movementConfig.right),
+      }
+    };
+
+    const result = generateControls(fileContent, config);
     setOutput(result);
   };
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-white">
-
       <Header />
 
       <div className="max-w-5xl mx-auto p-6">
+        {/* Título */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          <span className="text-5xl">🎮</span>
+          <h1 className="text-4xl font-bold">Controls Generator (Cámara Zero)</h1>
+        </div>
 
-        <h1 className="text-3xl font-bold mb-8">
-          🎮 Controls Generator (Camera Zero)
-        </h1>
+        {/* Upload - exactamente como en tu captura */}
+        <div
+          onClick={() => fileInputRef.current.click()}
+          className="bg-[#111] border border-gray-700 hover:border-yellow-400 p-8 rounded-2xl text-center cursor-pointer mb-8 transition-all"
+        >
+          <p className="text-yellow-400 font-semibold text-lg">Click para subir controls.sii</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".sii"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setFileName(file.name);
+                const reader = new FileReader();
+                reader.onload = (ev) => setFileContent(ev.target.result);
+                reader.readAsText(file);
+              }
+            }}
+            className="hidden"
+          />
+          {fileName && <p className="text-sm text-gray-400 mt-2">Archivo: {fileName}</p>}
+        </div>
 
-        {/* CAMERA */}
-        <div className="bg-[#111] p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold">Activar Cámara Cero</h2>
-
-          <div className="flex gap-4 items-center">
-            {[["CTRL",camCtrl,setCamCtrl],["SHIFT",camShift,setCamShift],["ALT",camAlt,setCamAlt]].map(([l,v,s])=>(
-              <button onClick={()=>s(!v)} className={`px-4 py-2 border rounded-lg ${v?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}>
-                {l}
+        {/* Activar Cámara Cero */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-6">
+          <h2 className="text-xl font-semibold mb-4">Activar Cámara Cero</h2>
+          <div className="flex gap-4 flex-wrap items-center">
+            {[
+              ["CTRL", camCtrl, setCamCtrl],
+              ["SHIFT", camShift, setCamShift],
+              ["ALT", camAlt, setCamAlt]
+            ].map(([label, val, set]) => (
+              <button
+                key={label}
+                onClick={() => set(!val)}
+                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${val ? 'border-yellow-400 bg-yellow-400/10' : 'border-gray-600'}`}
+              >
+                {label}
               </button>
             ))}
-
-            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+            <div className="ml-4 w-16 h-16 flex items-center justify-center bg-black border-2 border-yellow-400 rounded-xl shadow-[0_0_18px_rgba(255,204,0,0.5)] font-mono text-3xl">
               {camKey}
             </div>
           </div>
         </div>
 
-        {/* TELEPORT */}
-        <div className="bg-[#111] p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold">Teleport</h2>
-
-          <div className="flex gap-4 items-center">
-            {[["CTRL",tpCtrl,setTpCtrl],["SHIFT",tpShift,setTpShift],["ALT",tpAlt,setTpAlt]].map(([l,v,s])=>(
-              <button onClick={()=>s(!v)} className={`px-4 py-2 border rounded-lg ${v?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}>
-                {l}
+        {/* Teleport */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
+          <h2 className="text-xl font-semibold mb-4">Teleport</h2>
+          <div className="flex gap-4 flex-wrap items-center">
+            {[
+              ["CTRL", tpCtrl, setTpCtrl],
+              ["SHIFT", tpShift, setTpShift],
+              ["ALT", tpAlt, setTpAlt]
+            ].map(([label, val, set]) => (
+              <button
+                key={label}
+                onClick={() => set(!val)}
+                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${val ? 'border-yellow-400 bg-yellow-400/10' : 'border-gray-600'}`}
+              >
+                {label}
               </button>
             ))}
-
             <button
-              onClick={()=>setTpKey(tpKey ? "" : "f9")}
-              className={`w-20 h-14 flex items-center justify-center border rounded-lg ${tpKey?"border-yellow-400 shadow-[0_0_10px_rgba(255,204,0,0.5)]":"border-gray-600"}`}
+              onClick={() => setTpEnabled(!tpEnabled)}
+              className={`ml-6 w-16 h-16 flex items-center justify-center border-2 rounded-xl font-mono text-xl transition-all ${tpEnabled ? 'border-yellow-400 shadow-[0_0_18px_rgba(255,204,0,0.5)]' : 'border-gray-600'}`}
             >
-              {tpKey || "OFF"}
+              {tpEnabled ? "F9" : "OFF"}
             </button>
           </div>
         </div>
 
-        {/* MOVIMIENTO */}
-        <div className="bg-[#111] p-6 rounded-xl mb-6">
+        {/* MOVIMIENTO CÁMARA - exactamente como en tu captura */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
+          <h2 className="text-xl font-semibold mb-6">Movimiento Cámara</h2>
 
-          <h2 className="mb-6 font-semibold">Movimiento Cámara</h2>
-
-          <div className="flex gap-4 mb-8">
-            {["flechas","numpad","custom"].map(mode => (
+          {/* Modos */}
+          <div className="flex gap-3 mb-8">
+            {["flechas", "numpad", "custom"].map(mode => (
               <button
-                onClick={()=>handleModeChange(mode)}
-                className={`px-4 py-2 border rounded-lg ${movementMode===mode?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
+                key={mode}
+                onClick={() => handleModeChange(mode)}
+                className={`px-7 py-3 rounded-xl border font-medium transition-all ${movementMode === mode ? 'border-yellow-400 bg-yellow-400/15 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'}`}
               >
-                {mode}
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
             ))}
           </div>
 
+          {/* Cruceta (layout de tu captura) */}
           <div className="flex justify-center">
             <div className="grid grid-cols-3 gap-4">
+              <div />
+              <button onClick={() => setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center border-2 rounded-2xl text-5xl transition-all ${activeDir === "up" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,204,0,0.6)]' : 'border-gray-700 bg-gray-900'}`}>
+                {getVisualKey("up")}
+              </button>
+              <div />
 
-              <div></div>
-
-              {["up","left","right","down"].map((dir,i)=>(
-                <>
-                  {dir==="up" && (
-                    <button onClick={()=>setActiveDir("up")} className={`w-24 h-24 border rounded-lg ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                      {renderKey("up")}
-                      <div className="text-xs mt-1">{renderHint("up")}</div>
-                    </button>
-                  )}
-
-                  {dir==="left" && (
-                    <button onClick={()=>setActiveDir("left")} className={`w-24 h-24 border rounded-lg ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                      {renderKey("left")}
-                      <div className="text-xs mt-1">{renderHint("left")}</div>
-                    </button>
-                  )}
-
-                  {dir==="right" && (
-                    <button onClick={()=>setActiveDir("right")} className={`w-24 h-24 border rounded-lg ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                      {renderKey("right")}
-                      <div className="text-xs mt-1">{renderHint("right")}</div>
-                    </button>
-                  )}
-
-                  {dir==="down" && (
-                    <button onClick={()=>setActiveDir("down")} className={`w-24 h-24 border rounded-lg ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                      {renderKey("down")}
-                      <div className="text-xs mt-1">{renderHint("down")}</div>
-                    </button>
-                  )}
-                </>
-              ))}
-
+              <button onClick={() => setActiveDir("left")} className={`w-20 h-20 flex flex-col items-center justify-center border-2 rounded-2xl text-5xl transition-all ${activeDir === "left" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,204,0,0.6)]' : 'border-gray-700 bg-gray-900'}`}>
+                {getVisualKey("left")}
+              </button>
+              <button onClick={() => setActiveDir("down")} className={`w-20 h-20 flex flex-col items-center justify-center border-2 rounded-2xl text-5xl transition-all ${activeDir === "down" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,204,0,0.6)]' : 'border-gray-700 bg-gray-900'}`}>
+                {getVisualKey("down")}
+              </button>
+              <button onClick={() => setActiveDir("right")} className={`w-20 h-20 flex flex-col items-center justify-center border-2 rounded-2xl text-5xl transition-all ${activeDir === "right" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_20px_rgba(255,204,0,0.6)]' : 'border-gray-700 bg-gray-900'}`}>
+                {getVisualKey("right")}
+              </button>
             </div>
           </div>
 
+          {/* Hints + modificadores SOLO en Custom */}
           {movementMode === "custom" && (
-            <div className="flex justify-center mt-6">
-              <input
-                ref={inputRef}
-                value={renderHint(activeDir)}
-                readOnly
-                className="w-72 h-12 text-center bg-black border border-yellow-400 rounded-lg"
-              />
-            </div>
-          )}
+            <>
+              <div className="mt-6 grid grid-cols-3 gap-4 text-center text-xs font-mono text-gray-300">
+                <div />
+                <div>{getComboText("up")}</div>
+                <div />
+                <div>{getComboText("left")}</div>
+                <div>{getComboText("down")}</div>
+                <div>{getComboText("right")}</div>
+              </div>
 
+              <div className="flex justify-center gap-4 mt-8">
+                {["ctrl", "shift", "alt"].map(mod => (
+                  <button
+                    key={mod}
+                    onClick={() => updateDir(activeDir, { [mod]: !movementConfig[activeDir][mod] })}
+                    className={`px-7 py-3 rounded-xl border text-sm font-medium transition-all ${movementConfig[activeDir][mod] ? 'border-yellow-400 bg-yellow-400/10' : 'border-gray-600'}`}
+                  >
+                    {mod.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-center mt-6">
+                <input
+                  ref={customInputRef}
+                  value={getComboText(activeDir)}
+                  readOnly
+                  className="w-80 h-12 text-center bg-black border-2 border-yellow-400 rounded-2xl font-mono text-lg"
+                />
+              </div>
+            </>
+          )}
         </div>
 
-        <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
-          Generar Controls
-        </button>
+        <div className="flex justify-center">
+          <button onClick={handleGenerate} className="bg-blue-600 hover:bg-blue-700 px-14 py-5 rounded-2xl text-lg font-semibold transition-all shadow-lg">
+            Generar Controls
+          </button>
+        </div>
 
+        {output && (
+          <pre className="mt-12 bg-black p-8 rounded-2xl text-green-300 font-mono text-sm border border-gray-700 overflow-auto">
+            {output}
+          </pre>
+        )}
       </div>
 
       <Footer />
