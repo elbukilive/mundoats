@@ -24,30 +24,29 @@ const CameraToolPage = () => {
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
-  const emptyConfig = {
+  const emptyMovement = {
     up: { ctrl:false, shift:false, alt:false, keys:[] },
     down: { ctrl:false, shift:false, alt:false, keys:[] },
     left: { ctrl:false, shift:false, alt:false, keys:[] },
     right: { ctrl:false, shift:false, alt:false, keys:[] },
   };
 
-  const [movementConfig, setMovementConfig] = useState(emptyConfig);
-
-  // 👉 LIMPIAR CUANDO CAMBIA A CUSTOM
-  const handleModeChange = (mode) => {
-    setMovementMode(mode);
-
-    if (mode === "custom") {
-      setMovementConfig(emptyConfig);
-      setActiveDir("up");
-    }
-  };
+  const [movementConfig, setMovementConfig] = useState(emptyMovement);
 
   const updateDir = (dir, changes) => {
     setMovementConfig(prev => ({
       ...prev,
       [dir]: { ...prev[dir], ...changes }
     }));
+  };
+
+  const handleModeChange = (mode) => {
+    setMovementMode(mode);
+
+    if(mode === "custom"){
+      setMovementConfig(emptyMovement);
+      setActiveDir("up");
+    }
   };
 
   // ================= VISUAL =================
@@ -159,6 +158,59 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
+        {/* UPLOAD */}
+        <div
+          onClick={() => fileInputRef.current.click()}
+          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 text-center"
+        >
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden"/>
+          <p className="text-gray-400">{fileName || "Click para subir controls.sii"}</p>
+        </div>
+
+        {/* CAMERA ZERO */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
+
+          <div className="flex gap-4 items-center">
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">CTRL</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
+            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
+
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              {camKey}
+            </div>
+          </div>
+        </div>
+
+        {/* TELEPORT */}
+        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+          <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
+
+          <div className="flex gap-3 mb-4">
+            {[
+              ["CTRL",tpCtrl,setTpCtrl],
+              ["SHIFT",tpShift,setTpShift],
+              ["ALT",tpAlt,setTpAlt]
+            ].map(([label,val,set])=>(
+              <button
+                key={label}
+                onClick={()=>set(!val)}
+                className={`px-4 py-2 rounded-lg border ${val?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3 items-center">
+            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">F9</button>
+
+            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
+              F9
+            </div>
+          </div>
+        </div>
+
         {/* MOVIMIENTO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
@@ -173,6 +225,7 @@ const CameraToolPage = () => {
             ))}
           </div>
 
+          {/* MODIFIERS SOLO CUSTOM */}
           {movementMode === "custom" && (
             <div className="flex gap-4 mb-6">
               {["ctrl","shift","alt"].map(mod=>(
@@ -189,28 +242,42 @@ const CameraToolPage = () => {
 
           {/* GRID */}
           <div className="flex justify-center">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 items-center">
 
               <div></div>
 
-              {["up","left","right","down"].map(dir => (
-                <button
-                  key={dir}
-                  onClick={()=>setActiveDir(dir)}
-                  className={`w-20 h-20 rounded-lg border relative
-                  ${activeDir===dir?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}
-                >
-                  <div className="text-xl">{renderKey(dir)}</div>
-                  <div className="text-[10px] text-yellow-400 absolute bottom-1 w-full text-center">
-                    {renderCombo(movementConfig[dir])}
-                  </div>
-                </button>
-              ))}
+              <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("up")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
+              </button>
+
+              <div></div>
+
+              <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("left")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.left)}</div>
+              </button>
+
+              <div></div>
+
+              <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("right")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.right)}</div>
+              </button>
+
+              <div></div>
+
+              <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("down")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.down)}</div>
+              </button>
+
+              <div></div>
 
             </div>
           </div>
 
-          {/* INPUT */}
+          {/* INPUT SOLO CUSTOM */}
           {movementMode === "custom" && activeDir && (
             <div className="flex justify-center mt-6">
               <input
