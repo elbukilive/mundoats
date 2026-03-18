@@ -12,16 +12,13 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [fileName, setFileName] = useState('');
 
-  // CAMERA ZERO
   const [camKey] = useState("0");
 
-  // TELEPORT
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
   const [tpKey] = useState("f9");
 
-  // MOVIMIENTO
   const [movementMode, setMovementMode] = useState("flechas");
   const [activeDir, setActiveDir] = useState("up");
 
@@ -41,7 +38,6 @@ const CameraToolPage = () => {
     }));
   };
 
-  // RESET limpio
   const handleModeChange = (mode) => {
     setMovementMode(mode);
     setMovementConfig(emptyMovement);
@@ -62,7 +58,6 @@ const CameraToolPage = () => {
     }
   },[movementMode, activeDir]);
 
-  // BACKSPACE FIX
   useEffect(()=>{
     if(movementMode !== "custom") return;
 
@@ -109,7 +104,6 @@ const CameraToolPage = () => {
 
   },[movementMode, activeDir]);
 
-  // NUMPAD CORRECTO
   const renderKey = (dir) => {
     if (movementMode === "numpad") {
       return { up:"8", down:"2", left:"4", right:"6" }[dir];
@@ -124,68 +118,6 @@ const CameraToolPage = () => {
     if (cfg.alt) parts.push("A");
     if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
     return parts.join("+");
-  };
-
-  const buildCombo = (cfg) => {
-    let parts = [];
-
-    if (cfg.ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
-    if (cfg.shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
-    if (cfg.alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-
-    cfg.keys.forEach(k=>{
-      parts.push(`keyboard.${k}?0`);
-    });
-
-    return parts.join(" & ");
-  };
-
-  const buildInputValue = () => {
-    const cfg = movementConfig[activeDir];
-
-    let parts = [];
-    if (cfg.ctrl) parts.push("CTRL");
-    if (cfg.shift) parts.push("SHIFT");
-    if (cfg.alt) parts.push("ALT");
-    if (cfg.keys.length) parts.push(...cfg.keys.map(k=>k.toUpperCase()));
-
-    return parts.join("+");
-  };
-
-  const handleInputChange = (value) => {
-    const keys = value
-      .toLowerCase()
-      .replace(/ctrl|shift|alt/gi,'')
-      .split('+')
-      .map(k=>k.trim())
-      .filter(k=>k);
-
-    updateDir(activeDir,{keys});
-  };
-
-  const handleGenerate = () => {
-    if (!fileContent) {
-      alert("Sube archivo primero");
-      return;
-    }
-
-    const result = generateControls(fileContent,{
-      camera:`keyboard.${camKey}?0`,
-      teleport:buildCombo({
-        ctrl:tpCtrl,
-        shift:tpShift,
-        alt:tpAlt,
-        keys:[tpKey]
-      }),
-      movement:{
-        up:buildCombo(movementConfig.up),
-        down:buildCombo(movementConfig.down),
-        left:buildCombo(movementConfig.left),
-        right:buildCombo(movementConfig.right),
-      }
-    });
-
-    setOutput(result);
   };
 
   return (
@@ -204,13 +136,13 @@ const CameraToolPage = () => {
 
           <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          <div className="grid grid-cols-2 items-start">
+          <div className="grid grid-cols-2">
 
             {/* IZQUIERDA */}
-            <div className="flex flex-col justify-between h-[260px]">
+            <div className="flex flex-col">
 
-              {/* MODOS */}
-              <div className="flex gap-4">
+              {/* 🔥 TOP alineado con ↑ */}
+              <div className="flex gap-4 mb-20">
                 {["flechas","numpad","custom"].map(mode => (
                   <button
                     key={mode}
@@ -222,9 +154,9 @@ const CameraToolPage = () => {
                 ))}
               </div>
 
-              {/* MODIFIERS */}
+              {/* 🔥 BOTTOM alineado con ↓ */}
               {movementMode === "custom" && (
-                <div className="flex gap-4">
+                <div className="flex gap-4 mt-16">
                   {["ctrl","shift","alt"].map(mod=>(
                     <button
                       key={mod}
@@ -240,36 +172,32 @@ const CameraToolPage = () => {
             </div>
 
             {/* DERECHA */}
-            <div className="flex justify-end pr-20">
+            <div className="flex justify-end pr-20 pt-4">
 
               <div className="grid grid-cols-3 gap-4">
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("up")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold">{renderCombo(movementConfig.up)}</div>
+                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  ↑
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("left")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("left")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold">{renderCombo(movementConfig.left)}</div>
+                <button onClick={()=>setActiveDir("left")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
+                  ←
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("right")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("right")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold">{renderCombo(movementConfig.right)}</div>
+                <button onClick={()=>setActiveDir("right")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
+                  →
                 </button>
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("down")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("down")}</div>
-                  <div className="text-[10px] text-yellow-400 font-semibold">{renderCombo(movementConfig.down)}</div>
+                <button onClick={()=>setActiveDir("down")} className="w-20 h-20 flex items-center justify-center rounded-lg border border-gray-600 bg-black">
+                  ↓
                 </button>
 
                 <div></div>
@@ -280,23 +208,7 @@ const CameraToolPage = () => {
 
           </div>
 
-          {movementMode === "custom" && (
-            <div className="flex justify-center mt-6">
-              <input
-                ref={inputRef}
-                value={buildInputValue()}
-                onChange={(e)=>handleInputChange(e.target.value)}
-                placeholder="CTRL+C"
-                className="w-60 h-12 text-center bg-black border border-yellow-400 rounded-lg"
-              />
-            </div>
-          )}
-
         </div>
-
-        <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
-          Generar Controls
-        </button>
 
       </div>
 
