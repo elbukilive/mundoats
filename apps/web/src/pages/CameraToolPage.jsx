@@ -41,6 +41,7 @@ const CameraToolPage = () => {
     }));
   };
 
+  // ================= MODE CHANGE =================
   const handleModeChange = (mode) => {
     setMovementMode(mode);
 
@@ -64,23 +65,23 @@ const CameraToolPage = () => {
   }, [movementMode, activeDir]);
 
   // ================= KEYBOARD CAPTURE =================
-  useEffect(()=>{
-    if(movementMode !== "custom") return;
+  useEffect(() => {
+    if (movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
 
-      if(!activeDir) return;
+      if (!activeDir) return;
 
-      if(["Control","Shift","Alt"].includes(e.key)) return;
+      if (["Control","Shift","Alt"].includes(e.key)) return;
 
       e.preventDefault();
 
       const key = e.key.toLowerCase();
 
-      setMovementConfig(prev=>{
+      setMovementConfig(prev => {
         const current = prev[activeDir];
 
-        if(current.keys.includes(key)) return prev;
+        if (current.keys.includes(key)) return prev;
 
         return {
           ...prev,
@@ -95,7 +96,7 @@ const CameraToolPage = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
 
-  },[movementMode, activeDir]);
+  }, [movementMode, activeDir]);
 
   // ================= VISUAL =================
   const renderKey = (dir) => {
@@ -154,6 +155,20 @@ const CameraToolPage = () => {
     updateDir(activeDir, { keys });
   };
 
+  // ================= FILE =================
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFileContent(event.target.result);
+    };
+    reader.readAsText(file);
+  };
+
   // ================= GENERATE =================
   const handleGenerate = () => {
     if (!fileContent) {
@@ -191,50 +206,6 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* CAMERA ZERO */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
-
-          <div className="flex gap-4 items-center">
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">CTRL</button>
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">SHIFT</button>
-            <button className="px-4 py-2 border border-gray-600 rounded-lg">ALT</button>
-
-            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
-              {camKey}
-            </div>
-          </div>
-        </div>
-
-        {/* TELEPORT */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
-          <h2 className="mb-4 font-semibold text-lg">Teleport</h2>
-
-          <div className="flex gap-3 mb-4">
-            {[
-              ["CTRL",tpCtrl,setTpCtrl],
-              ["SHIFT",tpShift,setTpShift],
-              ["ALT",tpAlt,setTpAlt]
-            ].map(([label,val,set])=>(
-              <button
-                key={label}
-                onClick={()=>set(!val)}
-                className={`px-4 py-2 rounded-lg border ${val?"border-yellow-400 bg-yellow-400/10":"border-gray-600"}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-3 items-center">
-            <button className="px-4 py-2 border border-yellow-400 bg-yellow-400/10 rounded-lg">F9</button>
-
-            <div className="w-20 h-14 flex items-center justify-center bg-black border border-yellow-400 rounded-lg shadow-[0_0_10px_rgba(255,204,0,0.5)]">
-              F9
-            </div>
-          </div>
-        </div>
-
         {/* MOVIMIENTO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
@@ -268,27 +239,45 @@ const CameraToolPage = () => {
             </div>
           )}
 
+          {/* GRID */}
           <div className="flex justify-center">
             <div className="grid grid-cols-3 gap-4 items-center">
 
               <div></div>
 
-              {["up","left","right","down"].map(dir => (
-                <button
-                  key={dir}
-                  onMouseDown={(e)=>e.preventDefault()}
-                  onClick={()=>setActiveDir(dir)}
-                  className={`w-20 h-20 rounded-lg border ${activeDir===dir?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}
-                >
-                  <div className="text-xl">{renderKey(dir)}</div>
-                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig[dir])}</div>
-                </button>
-              ))}
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("up")} className={`w-20 h-20 rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("up")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
+              </button>
+
+              <div></div>
+
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("left")} className={`w-20 h-20 rounded-lg border ${activeDir==="left"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("left")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.left)}</div>
+              </button>
+
+              <div></div>
+
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("right")} className={`w-20 h-20 rounded-lg border ${activeDir==="right"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("right")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.right)}</div>
+              </button>
+
+              <div></div>
+
+              <button onMouseDown={(e)=>e.preventDefault()} onClick={()=>setActiveDir("down")} className={`w-20 h-20 rounded-lg border ${activeDir==="down"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                <div className="text-xl">{renderKey("down")}</div>
+                <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.down)}</div>
+              </button>
+
+              <div></div>
 
             </div>
           </div>
 
-          {movementMode === "custom" && (
+          {/* INPUT */}
+          {movementMode === "custom" && activeDir && (
             <div className="flex justify-center mt-6">
               <input
                 ref={inputRef}
