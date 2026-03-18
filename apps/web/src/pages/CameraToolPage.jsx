@@ -131,17 +131,16 @@ const CameraToolPage = () => {
           🎮 Controls Generator (Camera Zero)
         </h1>
 
-        {/* MOVIMIENTO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
           <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          <div className="grid grid-cols-2 items-center">
+          <div className="grid grid-cols-2">
 
             {/* IZQUIERDA */}
-            <div className="flex flex-col justify-center gap-10">
+            <div className="flex flex-col justify-between h-[220px]">
 
-              {/* TOP (alineado con ↑) */}
+              {/* 🔥 ARRIBA = alineado con ↑ */}
               <div className="flex gap-4">
                 {["flechas","numpad","custom"].map(mode => (
                   <button
@@ -154,7 +153,7 @@ const CameraToolPage = () => {
                 ))}
               </div>
 
-              {/* BOTTOM (alineado con ↓) */}
+              {/* 🔥 ABAJO = alineado con ↓ */}
               {movementMode === "custom" && (
                 <div className="flex gap-4">
                   {["ctrl","shift","alt"].map(mod=>(
@@ -178,9 +177,8 @@ const CameraToolPage = () => {
 
                 <div></div>
 
-                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex flex-col items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
-                  <div>{renderKey("up")}</div>
-                  <div className="text-[10px] text-yellow-400">{renderCombo(movementConfig.up)}</div>
+                <button onClick={()=>setActiveDir("up")} className={`w-20 h-20 flex items-center justify-center rounded-lg border ${activeDir==="up"?"border-yellow-400 bg-yellow-400/10":"border-gray-600 bg-black"}`}>
+                  {renderKey("up")}
                 </button>
 
                 <div></div>
