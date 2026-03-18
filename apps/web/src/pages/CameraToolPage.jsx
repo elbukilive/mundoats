@@ -67,7 +67,6 @@ const CameraToolPage = () => {
 
       if(!activeDir) return;
 
-      // BACKSPACE = borrar última tecla
       if(e.key === "Backspace"){
         e.preventDefault();
 
@@ -237,10 +236,14 @@ const CameraToolPage = () => {
             {renderToggle("ALT",camAlt,setCamAlt)}
 
             <input
-              value={buildDisplay(camCtrl,camShift,camAlt,camKey)}
-              onChange={(e)=>setCamKey(e.target.value.split('+').pop().toLowerCase())}
-              className="w-32 h-14 text-center bg-black border border-yellow-400 rounded-lg"
+              value={camKey}
+              onChange={(e)=>setCamKey(e.target.value.toLowerCase())}
+              className="w-20 h-14 text-center bg-black border border-yellow-400 rounded-lg"
             />
+
+            <div className="text-yellow-400 text-sm">
+              {buildDisplay(camCtrl,camShift,camAlt,camKey)}
+            </div>
           </div>
         </div>
 
@@ -263,10 +266,14 @@ const CameraToolPage = () => {
             </button>
 
             <input
-              value={buildDisplay(tpCtrl,tpShift,tpAlt,tpKey)}
-              onChange={(e)=>setTpKey(e.target.value.split('+').pop().toLowerCase())}
-              className="w-32 h-14 text-center bg-black border border-yellow-400 rounded-lg"
+              value={tpKey}
+              onChange={(e)=>setTpKey(e.target.value.toLowerCase())}
+              className="w-20 h-14 text-center bg-black border border-yellow-400 rounded-lg"
             />
+
+            <div className="text-yellow-400 text-sm">
+              {buildDisplay(tpCtrl,tpShift,tpAlt,tpKey)}
+            </div>
           </div>
         </div>
 
