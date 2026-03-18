@@ -18,9 +18,22 @@ const CameraToolPage = () => {
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-
   const [tpUseF9, setTpUseF9] = useState(true);
   const [tpKey, setTpKey] = useState("f9");
+
+  // ===== MOVIMIENTO =====
+  const [moveMode, setMoveMode] = useState("arrows"); // arrows | numpad
+
+  const [mvCtrl, setMvCtrl] = useState(false);
+  const [mvShift, setMvShift] = useState(false);
+  const [mvAlt, setMvAlt] = useState(false);
+
+  const [mvCustom, setMvCustom] = useState(false);
+
+  const [mvUp, setMvUp] = useState("");
+  const [mvDown, setMvDown] = useState("");
+  const [mvLeft, setMvLeft] = useState("");
+  const [mvRight, setMvRight] = useState("");
 
   // ================= FILE =================
   const handleFileUpload = (e) => {
@@ -36,7 +49,7 @@ const CameraToolPage = () => {
     reader.readAsText(file);
   };
 
-  // ================= BUILD COMBO =================
+  // ================= BUILD =================
   const buildCombo = (ctrl, shift, alt, key) => {
     let parts = [];
 
@@ -49,6 +62,34 @@ const CameraToolPage = () => {
     return parts.join(" & ");
   };
 
+  // ===== MOVEMENT KEYS =====
+  const getMovementKeys = () => {
+    if (mvCustom) {
+      return {
+        up: mvUp,
+        down: mvDown,
+        left: mvLeft,
+        right: mvRight
+      };
+    }
+
+    if (moveMode === "arrows") {
+      return {
+        up: "up",
+        down: "down",
+        left: "left",
+        right: "right"
+      };
+    }
+
+    return {
+      up: "kp_2",
+      down: "kp_5",
+      left: "kp_4",
+      right: "kp_6"
+    };
+  };
+
   // ================= GENERATE =================
   const handleGenerate = () => {
     if (!fileContent) {
@@ -59,31 +100,22 @@ const CameraToolPage = () => {
     const cameraCombo = buildCombo(false, false, false, camKey);
     const teleportCombo = buildCombo(tpCtrl, tpShift, tpAlt, tpKey);
 
+    const mvKeys = getMovementKeys();
+
+    const movement = {
+      up: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.up),
+      down: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.down),
+      left: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.left),
+      right: buildCombo(mvCtrl, mvShift, mvAlt, mvKeys.right),
+    };
+
     const result = generateControls(fileContent, {
       camera: cameraCombo,
-      teleport: teleportCombo
+      teleport: teleportCombo,
+      movement
     });
 
     setOutput(result);
-  };
-
-  // ================= COPY =================
-  const handleCopy = () => {
-    navigator.clipboard.writeText(output);
-    alert("Copiado!");
-  };
-
-  // ================= DOWNLOAD =================
-  const handleDownload = () => {
-    const blob = new Blob([output], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "controls.sii";
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -100,139 +132,72 @@ const CameraToolPage = () => {
         {/* UPLOAD */}
         <div
           onClick={() => fileInputRef.current.click()}
-          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 hover:border-yellow-400 transition text-center"
+          className="cursor-pointer border border-gray-700 bg-[#111] p-6 rounded-xl mb-6 text-center"
         >
-          <input
-            type="file"
-            accept=".sii,.txt"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden"/>
           <p className="text-gray-400">
-            {fileName ? `📂 ${fileName}` : "Click para subir controls.sii"}
+            {fileName ? fileName : "Click para subir controls.sii"}
           </p>
         </div>
 
-        {/* ===== ACTIVAR CÁMARA ===== */}
+        {/* ===== MOVIMIENTO ===== */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
 
-          <h2 className="mb-4 font-semibold text-lg">Activar Cámara Cero</h2>
+          <h2 className="mb-6 font-semibold text-lg">Movimiento Cámara</h2>
 
-          <input
-            value={camKey}
-            onChange={(e) => setCamKey(e.target.value.slice(0,1))}
-            className="w-24 h-14 text-center text-xl font-semibold 
-            bg-black text-white 
-            border border-yellow-400 rounded-lg
-            shadow-[0_0_12px_rgba(255,204,0,0.5)]
-            outline-none"
-          />
+          {/* MODE */}
+          <div className="flex gap-4 mb-4">
 
-        </div>
+            <button
+              onClick={() => { setMoveMode("arrows"); setMvCustom(false); }}
+              className={`px-4 py-2 rounded-lg border ${moveMode === "arrows" ? "border-yellow-400" : "border-gray-600"}`}
+            >
+              Flechas
+            </button>
 
-        {/* ===== TELEPORT ===== */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-xl mb-6">
+            <button
+              onClick={() => { setMoveMode("numpad"); setMvCustom(false); }}
+              className={`px-4 py-2 rounded-lg border ${moveMode === "numpad" ? "border-yellow-400" : "border-gray-600"}`}
+            >
+              Numpad
+            </button>
 
-          <h2 className="mb-6 font-semibold text-lg">Teleport</h2>
-
-          <div className="flex items-center justify-between flex-wrap gap-6">
-
-            {/* MODIFIERS */}
-            <div className="flex items-center gap-4 flex-wrap">
-
-              {/* CTRL */}
-              <label className={`px-3 py-2 rounded-lg border cursor-pointer transition-all
-                ${tpCtrl ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]" : "border-gray-600"}
-              `}>
-                <input type="checkbox" checked={tpCtrl} onChange={() => setTpCtrl(!tpCtrl)} className="hidden"/>
-                CTRL
-              </label>
-
-              {/* SHIFT */}
-              <label className={`px-3 py-2 rounded-lg border cursor-pointer transition-all
-                ${tpShift ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]" : "border-gray-600"}
-              `}>
-                <input type="checkbox" checked={tpShift} onChange={() => setTpShift(!tpShift)} className="hidden"/>
-                SHIFT
-              </label>
-
-              {/* ALT */}
-              <label className={`px-3 py-2 rounded-lg border cursor-pointer transition-all
-                ${tpAlt ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]" : "border-gray-600"}
-              `}>
-                <input type="checkbox" checked={tpAlt} onChange={() => setTpAlt(!tpAlt)} className="hidden"/>
-                ALT
-              </label>
-
-              {/* F9 */}
-              <label className={`px-3 py-2 rounded-lg border cursor-pointer transition-all
-                ${tpUseF9 ? "border-yellow-400 bg-yellow-400/10 shadow-[0_0_10px_rgba(255,204,0,0.4)]" : "border-gray-600"}
-              `}>
-                <input
-                  type="checkbox"
-                  checked={tpUseF9}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setTpUseF9(checked);
-                    setTpKey(checked ? "f9" : "");
-                  }}
-                  className="hidden"
-                />
-                F9
-              </label>
-
-            </div>
-
-            {/* INPUT */}
-            <input
-              value={tpUseF9 ? "f9" : tpKey}
-              onChange={(e) => setTpKey(e.target.value.slice(0,1))}
-              disabled={tpUseF9}
-              className={`w-24 h-14 text-center text-xl font-semibold 
-              bg-black text-white border rounded-lg transition-all
-              ${tpUseF9
-                ? "border-yellow-400 shadow-[0_0_12px_rgba(255,204,0,0.5)]"
-                : "border-gray-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30"
-              }`}
-            />
+            <button
+              onClick={() => setMvCustom(!mvCustom)}
+              className={`px-4 py-2 rounded-lg border ${mvCustom ? "border-yellow-400" : "border-gray-600"}`}
+            >
+              Custom
+            </button>
 
           </div>
 
+          {/* MODIFIERS */}
+          <div className="flex gap-4 mb-4">
+
+            <label><input type="checkbox" checked={mvCtrl} onChange={() => setMvCtrl(!mvCtrl)}/> CTRL</label>
+            <label><input type="checkbox" checked={mvShift} onChange={() => setMvShift(!mvShift)}/> SHIFT</label>
+            <label><input type="checkbox" checked={mvAlt} onChange={() => setMvAlt(!mvAlt)}/> ALT</label>
+
+          </div>
+
+          {/* INPUTS */}
+          {mvCustom && (
+            <div className="grid grid-cols-4 gap-4">
+              <input placeholder="UP" value={mvUp} onChange={(e)=>setMvUp(e.target.value)} />
+              <input placeholder="DOWN" value={mvDown} onChange={(e)=>setMvDown(e.target.value)} />
+              <input placeholder="LEFT" value={mvLeft} onChange={(e)=>setMvLeft(e.target.value)} />
+              <input placeholder="RIGHT" value={mvRight} onChange={(e)=>setMvRight(e.target.value)} />
+            </div>
+          )}
+
         </div>
 
-        {/* BOTÓN */}
-        <button
-          onClick={handleGenerate}
-          className="bg-gradient-to-r from-blue-500 to-blue-700 px-6 py-3 rounded-lg shadow-lg hover:scale-105 transition mb-6"
-        >
+        <button onClick={handleGenerate} className="bg-blue-600 px-6 py-3 rounded-lg">
           Generar Controls
         </button>
 
-        {/* OUTPUT */}
         {output && (
-          <div className="bg-[#111] border border-gray-700 rounded-xl p-4">
-
-            <textarea
-              value={output}
-              readOnly
-              className="w-full h-64 bg-black p-4 rounded text-sm mb-4"
-            />
-
-            <div className="flex gap-4">
-
-              <button onClick={handleCopy} className="bg-green-600 px-4 py-2 rounded hover:bg-green-700">
-                Copiar
-              </button>
-
-              <button onClick={handleDownload} className="bg-purple-600 px-4 py-2 rounded hover:bg-purple-700">
-                Descargar
-              </button>
-
-            </div>
-
-          </div>
+          <textarea value={output} readOnly className="w-full h-64 mt-6 bg-black p-4"/>
         )}
 
       </div>
