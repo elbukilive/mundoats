@@ -14,7 +14,10 @@ const CameraToolPage = () => {
   const [ctrl, setCtrl] = useState(true);
   const [shift, setShift] = useState(true);
   const [alt, setAlt] = useState(false);
-  const [key, setKey] = useState("z");
+
+  // 🔥 DEFAULT F9 ACTIVO
+  const [useF9, setUseF9] = useState(true);
+  const [key, setKey] = useState("f9");
 
   // ================= FILE =================
   const handleFileUpload = (e) => {
@@ -108,8 +111,8 @@ const CameraToolPage = () => {
 
           <div className="flex items-center justify-between flex-wrap gap-6">
 
-            {/* CHECKBOXES */}
-            <div className="flex gap-4">
+            {/* MODIFIERS + F9 */}
+            <div className="flex items-center gap-6">
 
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={ctrl} onChange={() => setCtrl(!ctrl)} />
@@ -126,47 +129,26 @@ const CameraToolPage = () => {
                 ALT
               </label>
 
-            </div>
-
-            {/* INPUT + F9 */}
-            <div className="flex items-center gap-6">
-
-              {/* INPUT */}
-              <input
-                value={key}
-                onChange={(e) => {
-                  const val = e.target.value.slice(0,1).toLowerCase();
-                  if (val) setKey(val);
-                }}
-                disabled={key === "f9"}
-                placeholder="Z"
-                className={`w-24 h-14 text-center text-xl font-semibold 
-                bg-black text-white 
-                border rounded-lg outline-none
-                transition-all duration-200
-                ${key === "f9"
-                  ? "border-yellow-400 text-yellow-300 bg-[#1a1a1a] cursor-not-allowed"
-                  : "border-gray-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30 hover:border-yellow-400/50"
-                }`}
-              />
-
-              {/* CHECKBOX F9 */}
+              {/* 🔥 F9 COMO OPCIÓN PRINCIPAL */}
               <label className="flex items-center gap-2 cursor-pointer">
 
                 <input
                   type="checkbox"
-                  checked={key === "f9"}
+                  checked={useF9}
                   onChange={(e) => {
-                    if (e.target.checked) {
+                    const checked = e.target.checked;
+                    setUseF9(checked);
+
+                    if (checked) {
                       setKey("f9");
                     } else {
-                      setKey("z");
+                      setKey("z"); // default cuando lo quitan
                     }
                   }}
                 />
 
                 <span className={`px-3 py-1 rounded border text-sm
-                  ${key === "f9"
+                  ${useF9
                     ? "bg-yellow-500 text-black border-yellow-400"
                     : "border-gray-600"}
                 `}>
@@ -177,7 +159,26 @@ const CameraToolPage = () => {
 
             </div>
 
+            {/* INPUT */}
+            <input
+              value={useF9 ? "f9" : key}
+              onChange={(e) => {
+                const val = e.target.value.slice(0,1).toLowerCase();
+                if (val) setKey(val);
+              }}
+              disabled={useF9}
+              className={`w-24 h-14 text-center text-xl font-semibold 
+              bg-black text-white 
+              border rounded-lg outline-none
+              transition-all duration-200
+              ${useF9
+                ? "border-yellow-400 text-yellow-300 bg-[#1a1a1a] cursor-not-allowed"
+                : "border-gray-600 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/30 hover:border-yellow-400/50"
+              }`}
+            />
+
           </div>
+
         </div>
 
         {/* BOTÓN GENERAR */}
