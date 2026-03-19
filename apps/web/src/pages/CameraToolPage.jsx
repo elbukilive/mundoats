@@ -7,6 +7,7 @@ const CameraToolPage = () => {
   const fileInputRef = useRef(null);
   const customInputRef = useRef(null);
   const camKeyInputRef = useRef(null);
+  const tpKeyInputRef = useRef(null); // ← Nuevo ref para el input de Teleport
 
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
@@ -20,11 +21,12 @@ const CameraToolPage = () => {
   const [camKeyError, setCamKeyError] = useState(false);
 
   // ==================== TELEPORT ====================
-  const [tpCtrl, setTpCtrl] = useState(true);
+  const [tpCtrl, setTpCtrl] = useState(true);   // Default: CTRL activo
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpEnabled, setTpEnabled] = useState(true);
-  const tpKey = "f9";
+  const [tpEnabled, setTpEnabled] = useState(true); // Botón OFF/ON ya existe
+  const [tpMainKey, setTpMainKey] = useState('f9'); // Default "F9"
+  const [tpKeyError, setTpKeyError] = useState(false);
 
   // ==================== MOVIMIENTO ====================
   const [movementMode, setMovementMode] = useState("flechas");
@@ -144,18 +146,62 @@ const CameraToolPage = () => {
     }
   };
 
-  // NUEVO: Mantener el foco en la casilla mientras estamos en este menú
+  // Mantener foco en casilla Camera Zero
   useEffect(() => {
     if (camKeyInputRef.current && !camKeyInputRef.current.contains(document.activeElement)) {
-      // Solo re-enfocamos si el foco está en otro lugar (ej: después de clic en toggle)
       const timer = setTimeout(() => {
         camKeyInputRef.current?.focus();
         camKeyInputRef.current?.select();
-      }, 50); // Pequeño delay para evitar loops
-
+      }, 50);
       return () => clearTimeout(timer);
     }
-  }, [camCtrl, camShift, camAlt, camMainKey]); // Se ejecuta cada vez que cambian toggles o la tecla
+  }, [camCtrl, camShift, camAlt, camMainKey]);
+
+  // ==================== TELEPORT ====================
+  const getTpComboText = () => {
+    const parts = [];
+    if (tpCtrl) parts.push("CTRL");
+    if (tpShift) parts.push("SHIFT");
+    if (tpAlt) parts.push("ALT");
+    if (tpMainKey) parts.push(tpMainKey.toUpperCase());
+    return parts.join(" + ") || "—";
+  };
+
+  const handleTpKeyChange = (e) => {
+    const value = e.target.value.trim();
+    setTpKeyError(false);
+
+    if (value === '') {
+      setTpMainKey('');
+      return;
+    }
+
+    const lastChar = value.slice(-1).toLowerCase();
+    const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(lastChar);
+
+    if (isValid) {
+      setTpMainKey(lastChar);
+    } else {
+      setTpKeyError(true);
+    }
+  };
+
+  const handleTpKeyBlur = () => {
+    if (!tpMainKey) {
+      setTpMainKey('f9');
+    }
+  };
+
+  // Mantener foco en casilla Teleport mientras estamos en el menú
+  useEffect(() => {
+    if (tpKeyInputRef.current && !tpKeyInputRef.current.contains(document.activeElement)) {
+      const timer = setTimeout(() => {
+        tpKeyInputRef.current?.focus();
+        tpKeyInputRef.current?.select();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [tpCtrl, tpShift, tpAlt, tpMainKey]);
 
   const handleGenerate = () => {
     if (!fileContent) {
@@ -165,7 +211,7 @@ const CameraToolPage = () => {
 
     const config = {
       camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camMainKey || '0'] }),
-      teleport: tpEnabled ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpKey] }) : "",
+      teleport: tpEnabled ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpMainKey || 'f9'] }) : "",
       movement: {
         up:    buildCombo(movementConfig.up),
         down:  buildCombo(movementConfig.down),
@@ -263,29 +309,67 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* Teleport */}
+        {/* Teleport - Versión actualizada */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
           <h2 className="text-xl font-semibold mb-4">Teleport</h2>
-          <div className="flex gap-4 flex-wrap items-center">
-            {[
-              ["CTRL", tpCtrl, setTpCtrl],
-              ["SHIFT", tpShift, setTpShift],
-              ["ALT", tpAlt, setTpAlt]
-            ].map(([label, val, set]) => (
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+            {/* Toggles + botón OFF/ON */}
+            <div className="flex gap-4 flex-wrap items-center">
+              {[
+                ["CTRL", tpCtrl, setTpCtrl],
+                ["SHIFT", tpShift, setTpShift],
+                ["ALT", tpAlt, setTpAlt]
+              ].map(([label, val, set]) => (
+                <button
+                  key={label}
+                  onClick={() => set(!val)}
+                  className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
+                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+
+              {/* Botón toggle ON/OFF */}
               <button
-                key={label}
-                onClick={() => set(!val)}
-                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600'}`}
+                onClick={() => setTpEnabled(!tpEnabled)}
+                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
+                  tpEnabled ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                }`}
               >
-                {label}
+                {tpEnabled ? "ON" : "OFF"}
               </button>
-            ))}
-            <button
-              onClick={() => setTpEnabled(!tpEnabled)}
-              className={`ml-6 w-16 h-16 flex items-center justify-center border-2 rounded-xl font-mono text-xl transition-all ${tpEnabled ? 'border-yellow-400 shadow-[0_0_18px_rgba(255,204,0,0.5)]' : 'border-gray-600'}`}
-            >
-              {tpEnabled ? "F9" : "OFF"}
-            </button>
+            </div>
+
+            {/* Input editable para tecla principal (default F9) */}
+            <div className="flex flex-col">
+              <input
+                ref={tpKeyInputRef}
+                type="text"
+                maxLength={2}
+                value={tpMainKey.toUpperCase()}
+                onChange={handleTpKeyChange}
+                onFocus={(e) => e.target.select()}
+                onBlur={handleTpKeyBlur}
+                className={`w-20 h-16 text-center bg-black border-2 rounded-xl font-mono text-3xl shadow-[0_0_12px_rgba(255,204,0,0.3)] focus:outline-none focus:border-yellow-500 ${
+                  tpKeyError ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'border-yellow-400'
+                }`}
+                placeholder="F9"
+              />
+              {tpKeyError && (
+                <p className="text-xs text-red-400 mt-1 text-center">
+                  Tecla inválida (usa solo letras, números o símbolos simples)
+                </p>
+              )}
+            </div>
+
+            {/* Casilla de resultado */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="w-full h-16 flex items-center justify-center bg-black border-2 border-gray-600 rounded-xl font-mono text-xl text-yellow-300">
+                {tpEnabled ? getTpComboText() : "OFF"}
+              </div>
+            </div>
           </div>
         </div>
 
