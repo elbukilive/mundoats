@@ -15,7 +15,8 @@ const CameraToolPage = () => {
   const [camCtrl, setCamCtrl] = useState(false);
   const [camShift, setCamShift] = useState(false);
   const [camAlt, setCamAlt] = useState(false);
-  const camKey = "0";
+  const [camMainKey, setCamMainKey] = useState('0'); // Default "0" como en ATS
+  const [camKeyError, setCamKeyError] = useState(false);
 
   // ==================== TELEPORT ====================
   const [tpCtrl, setTpCtrl] = useState(true);
@@ -52,14 +53,12 @@ const CameraToolPage = () => {
     }
   };
 
-  // CAPTURA DE TECLADO (solo en custom)
   useEffect(() => {
     if (movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
       if (!activeDir) return;
 
-      // Toggle modificadores
       if (e.key === "Control") { updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl }); return; }
       if (e.key === "Shift")   { updateDir(activeDir, { shift: !movementConfig[activeDir].shift }); return; }
       if (e.key === "Alt")     { updateDir(activeDir, { alt: !movementConfig[activeDir].alt }); return; }
@@ -110,6 +109,41 @@ const CameraToolPage = () => {
     return parts.length ? parts.join(" & ") : "";
   };
 
+  // Nueva función para mostrar la combinación de Camera Zero
+  const getCameraComboText = () => {
+    const parts = [];
+    if (camCtrl) parts.push("CTRL");
+    if (camShift) parts.push("SHIFT");
+    if (camAlt) parts.push("ALT");
+    if (camMainKey) parts.push(camMainKey.toUpperCase());
+    return parts.join(" + ") || "—";
+  };
+
+  // Validación y manejo del input editable para la tecla principal
+  const handleCamKeyChange = (e) => {
+    const value = e.target.value;
+    setCamKeyError(false);
+
+    // Solo permitimos 1 carácter
+    if (value.length > 1) {
+      const lastChar = value.slice(-1);
+      setCamMainKey(lastChar.toLowerCase());
+    } else if (value.length === 1) {
+      const char = value.toLowerCase();
+      // Teclas válidas simples (imprimibles sin modificadores especiales)
+      const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(char);
+      if (isValid) {
+        setCamMainKey(char);
+      } else {
+        setCamKeyError(true);
+        // No actualizamos el estado si es inválida
+      }
+    } else {
+      // Vacío → volvemos al default "0"
+      setCamMainKey('0');
+    }
+  };
+
   const handleGenerate = () => {
     if (!fileContent) {
       alert("Sube primero tu archivo controls.sii");
@@ -117,7 +151,7 @@ const CameraToolPage = () => {
     }
 
     const config = {
-      camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camKey] }),
+      camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camMainKey] }),
       teleport: tpEnabled ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpKey] }) : "",
       movement: {
         up:    buildCombo(movementConfig.up),
@@ -165,30 +199,58 @@ const CameraToolPage = () => {
           {fileName && <p className="text-sm text-gray-400 mt-2">Archivo: {fileName}</p>}
         </div>
 
-        {/* Camera Zero */}
+        {/* Activar Cámara Cero - Versión actualizada */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-6">
           <h2 className="text-xl font-semibold mb-4">Activar Cámara Cero</h2>
-          <div className="flex gap-4 flex-wrap items-center">
-            {[
-              ["CTRL", camCtrl, setCamCtrl],
-              ["SHIFT", camShift, setCamShift],
-              ["ALT", camAlt, setCamAlt]
-            ].map(([label, val, set]) => (
-              <button
-                key={label}
-                onClick={() => set(!val)}
-                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600'}`}
-              >
-                {label}
-              </button>
-            ))}
-            <div className="ml-4 w-16 h-16 flex items-center justify-center bg-black border-2 border-yellow-400 rounded-xl shadow-[0_0_18px_rgba(255,204,0,0.5)] font-mono text-3xl">
-              {camKey}
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+            {/* Toggles */}
+            <div className="flex gap-4 flex-wrap">
+              {[
+                ["CTRL", camCtrl, setCamCtrl],
+                ["SHIFT", camShift, setCamShift],
+                ["ALT", camAlt, setCamAlt]
+              ].map(([label, val, set]) => (
+                <button
+                  key={label}
+                  onClick={() => set(!val)}
+                  className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
+                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Input editable para tecla principal */}
+            <div className="flex flex-col">
+              <input
+                type="text"
+                maxLength={1}
+                value={camMainKey.toUpperCase()}
+                onChange={handleCamKeyChange}
+                className={`w-20 h-16 text-center bg-black border-2 rounded-xl font-mono text-3xl shadow-[0_0_12px_rgba(255,204,0,0.3)] focus:outline-none ${
+                  camKeyError ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'border-yellow-400'
+                }`}
+                placeholder="?"
+              />
+              {camKeyError && (
+                <p className="text-xs text-red-400 mt-1 text-center">
+                  Tecla inválida (usa solo letras, números o símbolos simples)
+                </p>
+              )}
+            </div>
+
+            {/* Casilla de resultado (combinación completa) */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="w-full h-16 flex items-center justify-center bg-black border-2 border-gray-600 rounded-xl font-mono text-xl text-yellow-300">
+                {getCameraComboText()}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Teleport */}
+        {/* Teleport (sin cambios) */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
           <h2 className="text-xl font-semibold mb-4">Teleport</h2>
           <div className="flex gap-4 flex-wrap items-center">
@@ -214,11 +276,10 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* MOVIMIENTO CÁMARA - Versión final según tu spec */}
+        {/* Movimiento Cámara (sin cambios) */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
           <h2 className="text-xl font-semibold mb-6">Movimiento Cámara</h2>
 
-          {/* Modos */}
           <div className="flex gap-3 mb-8">
             {["flechas", "numpad", "custom"].map(mode => (
               <button
@@ -231,7 +292,6 @@ const CameraToolPage = () => {
             ))}
           </div>
 
-          {/* TOGGLES CTRL/SHIFT/ALT - ARRIBA DE LA CRUCETA (solo custom) */}
           {movementMode === "custom" && (
             <div className="flex justify-center gap-4 mb-6">
               {["ctrl", "shift", "alt"].map(mod => (
@@ -246,7 +306,6 @@ const CameraToolPage = () => {
             </div>
           )}
 
-          {/* Cruceta */}
           <div className="flex justify-center mb-8">
             <div className="grid grid-cols-3 gap-5">
               <div />
@@ -285,7 +344,6 @@ const CameraToolPage = () => {
             </div>
           </div>
 
-          {/* Input visual grande (solo custom) */}
           {movementMode === "custom" && (
             <div className="text-center">
               <input
