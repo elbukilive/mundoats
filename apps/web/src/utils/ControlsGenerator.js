@@ -2,9 +2,9 @@ export const generateControls = (input, config) => {
   try {
     // config = { camera: "...", teleport: "...", movement: { up: "...", down: "...", left: "...", right: "..." } }
 
-    // 1. Buscar total de líneas
+    // 1. Buscar total de líneas declarado
     const totalMatch = input.match(/config_lines:\s*(\d+)/);
-    if (!totalMatch) throw new Error("No se encontró config_lines");
+    if (!totalMatch) throw new Error("No se encontró config_lines: X");
 
     let totalLines = parseInt(totalMatch[1], 10);
 
@@ -17,7 +17,7 @@ export const generateControls = (input, config) => {
 
     let output = input;
 
-    // 3. Función para agregar o reemplazar mix
+    // 3. Función helper para agregar/reemplazar mix
     const addOrReplaceMix = (mixName, combo) => {
       if (!combo || combo.trim() === '') return;
 
@@ -25,10 +25,10 @@ export const generateControls = (input, config) => {
       const existing = output.match(regex);
 
       if (existing) {
-        // Reemplazar la existente
+        // Reemplazar si ya existe
         output = output.replace(
           regex,
-          ` config_lines[${existing[0].match(/\[\d+\]/)[0].slice(1,-1)}]: "mix ${mixName} \`${combo}\`"`
+          ` config_lines[${existing[0].match(/\[(\d+)\]/)[1]}]: "mix ${mixName} \`${combo}\`"`
         );
       } else {
         // Agregar nueva
@@ -47,10 +47,11 @@ export const generateControls = (input, config) => {
       }
     };
 
-    // 4. Aplicar todos los combos
+    // 4. Aplicar los combos
     if (config.camera)    addOrReplaceMix("camera_zero", config.camera);
     if (config.teleport)  addOrReplaceMix("teleport", config.teleport);
 
+    // Movimiento (aquí es donde faltaba)
     if (config.movement) {
       const m = config.movement;
       if (m.up)    addOrReplaceMix("cam_move_up",    m.up);
