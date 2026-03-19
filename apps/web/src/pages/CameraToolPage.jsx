@@ -7,7 +7,7 @@ const CameraToolPage = () => {
   const fileInputRef = useRef(null);
   const customInputRef = useRef(null);
   const camKeyInputRef = useRef(null);
-  const tpKeyInputRef = useRef(null); // ← Nuevo ref para el input de Teleport
+  const tpKeyInputRef = useRef(null);
 
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
@@ -24,7 +24,6 @@ const CameraToolPage = () => {
   const [tpCtrl, setTpCtrl] = useState(true);   // Default: CTRL activo
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpEnabled, setTpEnabled] = useState(true); // Botón OFF/ON ya existe
   const [tpMainKey, setTpMainKey] = useState('f9'); // Default "F9"
   const [tpKeyError, setTpKeyError] = useState(false);
 
@@ -192,7 +191,7 @@ const CameraToolPage = () => {
     }
   };
 
-  // Mantener foco en casilla Teleport mientras estamos en el menú
+  // Mantener foco en casilla Teleport
   useEffect(() => {
     if (tpKeyInputRef.current && !tpKeyInputRef.current.contains(document.activeElement)) {
       const timer = setTimeout(() => {
@@ -211,7 +210,7 @@ const CameraToolPage = () => {
 
     const config = {
       camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, keys: [camMainKey || '0'] }),
-      teleport: tpEnabled ? buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpMainKey || 'f9'] }) : "",
+      teleport: buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, keys: [tpMainKey || 'f9'] }),
       movement: {
         up:    buildCombo(movementConfig.up),
         down:  buildCombo(movementConfig.down),
@@ -309,12 +308,12 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* Teleport - Versión actualizada */}
+        {/* Teleport - Versión corregida */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
           <h2 className="text-xl font-semibold mb-4">Teleport</h2>
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            {/* Toggles + botón OFF/ON */}
-            <div className="flex gap-4 flex-wrap items-center">
+            {/* Toggles */}
+            <div className="flex gap-4 flex-wrap">
               {[
                 ["CTRL", tpCtrl, setTpCtrl],
                 ["SHIFT", tpShift, setTpShift],
@@ -330,19 +329,9 @@ const CameraToolPage = () => {
                   {label}
                 </button>
               ))}
-
-              {/* Botón toggle ON/OFF */}
-              <button
-                onClick={() => setTpEnabled(!tpEnabled)}
-                className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
-                  tpEnabled ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
-                }`}
-              >
-                {tpEnabled ? "ON" : "OFF"}
-              </button>
             </div>
 
-            {/* Input editable para tecla principal (default F9) */}
+            {/* Casilla editable para tecla principal (default F9) */}
             <div className="flex flex-col">
               <input
                 ref={tpKeyInputRef}
@@ -367,7 +356,7 @@ const CameraToolPage = () => {
             {/* Casilla de resultado */}
             <div className="flex-1 min-w-[200px]">
               <div className="w-full h-16 flex items-center justify-center bg-black border-2 border-gray-600 rounded-xl font-mono text-xl text-yellow-300">
-                {tpEnabled ? getTpComboText() : "OFF"}
+                {getTpComboText()}
               </div>
             </div>
           </div>
