@@ -12,7 +12,7 @@ const CameraToolPage = () => {
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
   const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false); // Para mostrar feedback de copia
 
   // ==================== CAMERA ZERO ====================
   const [camCtrl, setCamCtrl] = useState(false);
@@ -226,13 +226,13 @@ const CameraToolPage = () => {
     if (!output) return;
     navigator.clipboard.writeText(output).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2000); // Mensaje desaparece en 2 segundos
     }).catch(err => {
       console.error("Error al copiar:", err);
     });
   };
 
-  // Descargar como controls.sii (siempre este nombre)
+  // Descargar como archivo .sii
   const handleDownload = () => {
     if (!output) return;
 
@@ -240,7 +240,7 @@ const CameraToolPage = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'controls.sii'; // ← Siempre controls.sii
+    a.download = fileName ? `modificado_${fileName}` : 'controls_modificado.sii';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -465,7 +465,7 @@ const CameraToolPage = () => {
           )}
         </div>
 
-        {/* Botones Generar + Copiar + Descargar */}
+        {/* Botón Generar + Copiar + Descargar */}
         <div className="flex flex-col md:flex-row justify-center gap-6 mt-8">
           <button
             onClick={handleGenerate}
@@ -489,7 +489,7 @@ const CameraToolPage = () => {
                 onClick={handleDownload}
                 className="bg-purple-600 hover:bg-purple-700 px-10 py-5 rounded-2xl text-lg font-semibold transition-all shadow-lg"
               >
-                Descargar controls.sii
+                Descargar .sii
               </button>
             </>
           )}
