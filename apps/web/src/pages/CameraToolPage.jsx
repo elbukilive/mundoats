@@ -119,29 +119,35 @@ const CameraToolPage = () => {
     return parts.join(" + ") || "—";
   };
 
+  // LÓGICA FINAL PARA LA CASILLA: REEMPLAZO INMEDIATO DEL ÚLTIMO CARÁCTER
   const handleCamKeyChange = (e) => {
     const value = e.target.value.trim();
     setCamKeyError(false);
 
+    // Si está vacío → lo permitimos temporalmente (mientras escribe)
     if (value === '') {
-      setCamMainKey(''); // Permitir vacío mientras está enfocado
+      setCamMainKey('');
       return;
     }
 
-    const newKey = value.slice(-1).toLowerCase();
-    const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(newKey);
+    // Siempre tomamos SOLO el último carácter que escribió
+    const lastChar = value.slice(-1).toLowerCase();
+
+    // Validación
+    const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(lastChar);
 
     if (isValid) {
-      setCamMainKey(newKey);
+      setCamMainKey(lastChar);
     } else {
       setCamKeyError(true);
-      // Mantenemos el valor anterior si es inválido
+      // Si es inválido → no cambiamos, mantenemos el valor anterior
     }
   };
 
   const handleCamKeyBlur = () => {
+    // Al salir del input: si quedó vacío → volvemos a "0"
     if (!camMainKey) {
-      setCamMainKey('0'); // Restaurar default solo al perder foco
+      setCamMainKey('0');
     }
   };
 
@@ -226,7 +232,7 @@ const CameraToolPage = () => {
               <input
                 ref={camKeyInputRef}
                 type="text"
-                maxLength={1}
+                maxLength={2} // Permitimos ver temporalmente 2 chars para que se vea el reemplazo
                 value={camMainKey.toUpperCase()}
                 onChange={handleCamKeyChange}
                 onFocus={(e) => e.target.select()}
