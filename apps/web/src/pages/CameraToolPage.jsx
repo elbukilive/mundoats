@@ -6,6 +6,7 @@ import { generateControls } from '@/utils/ControlsGenerator.js';
 const CameraToolPage = () => {
   const fileInputRef = useRef(null);
   const customInputRef = useRef(null);
+  const camKeyInputRef = useRef(null); // ← NUEVO REF PARA EL INPUT DE TECLA PRINCIPAL
 
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
@@ -15,7 +16,7 @@ const CameraToolPage = () => {
   const [camCtrl, setCamCtrl] = useState(false);
   const [camShift, setCamShift] = useState(false);
   const [camAlt, setCamAlt] = useState(false);
-  const [camMainKey, setCamMainKey] = useState('0'); // Default "0" visible y funcional
+  const [camMainKey, setCamMainKey] = useState('0'); // Default visible hasta que el usuario interactúe
   const [camKeyError, setCamKeyError] = useState(false);
 
   // ==================== TELEPORT ====================
@@ -118,27 +119,30 @@ const CameraToolPage = () => {
     return parts.join(" + ") || "—";
   };
 
+  // MANEJO DEL INPUT DE TECLA PRINCIPAL (FIX DEL BUG)
   const handleCamKeyChange = (e) => {
     const value = e.target.value.trim();
     setCamKeyError(false);
 
     if (value === '') {
-      // Si borra todo, volvemos al default "0" (como pediste)
-      setCamMainKey('0');
+      setCamMainKey(''); // Permitimos vacío temporal (mientras esté enfocado)
       return;
     }
 
-    // Tomamos solo el último carácter escrito (máximo 1)
     const newKey = value.slice(-1).toLowerCase();
-
-    // Validación de tecla simple imprimible
     const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(newKey);
 
     if (isValid) {
       setCamMainKey(newKey);
     } else {
       setCamKeyError(true);
-      // No cambiamos el estado si es inválida → se mantiene el valor anterior
+    }
+  };
+
+  // Al perder el foco (blur) → si quedó vacío, volvemos al default "0"
+  const handleCamKeyBlur = () => {
+    if (camMainKey === '') {
+      setCamMainKey('0');
     }
   };
 
@@ -197,7 +201,7 @@ const CameraToolPage = () => {
           {fileName && <p className="text-sm text-gray-400 mt-2">Archivo: {fileName}</p>}
         </div>
 
-        {/* Activar Cámara Cero - con default "0" hasta interacción */}
+        {/* Activar Cámara Cero - BUG CORREGIDO */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-6">
           <h2 className="text-xl font-semibold mb-4">Activar Cámara Cero</h2>
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
@@ -220,13 +224,16 @@ const CameraToolPage = () => {
               ))}
             </div>
 
-            {/* Input editable - muestra "0" por default */}
+            {/* Input editable - AHORA FUNCIONA NATURAL (Backspace directo + reemplazo inmediato) */}
             <div className="flex flex-col">
               <input
+                ref={camKeyInputRef}
                 type="text"
                 maxLength={1}
                 value={camMainKey.toUpperCase()}
                 onChange={handleCamKeyChange}
+                onFocus={(e) => e.target.select()}          {/* ← Selecciona automáticamente al hacer clic */}
+                onBlur={handleCamKeyBlur}                   {/* ← Si queda vacío al salir, vuelve a "0" */}
                 className={`w-20 h-16 text-center bg-black border-2 rounded-xl font-mono text-3xl shadow-[0_0_12px_rgba(255,204,0,0.3)] focus:outline-none ${
                   camKeyError ? 'border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'border-yellow-400'
                 }`}
