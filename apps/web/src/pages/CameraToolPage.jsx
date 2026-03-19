@@ -12,6 +12,7 @@ const CameraToolPage = () => {
   const [fileContent, setFileContent] = useState('');
   const [fileName, setFileName] = useState('');
   const [output, setOutput] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // ==================== CAMERA ZERO ====================
   const [camCtrl, setCamCtrl] = useState(false);
@@ -21,10 +22,10 @@ const CameraToolPage = () => {
   const [camKeyError, setCamKeyError] = useState(false);
 
   // ==================== TELEPORT ====================
-  const [tpCtrl, setTpCtrl] = useState(true);   // Default: CTRL activo
+  const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpMainKey, setTpMainKey] = useState('f9'); // Default "F9"
+  const [tpMainKey, setTpMainKey] = useState('f9');
   const [tpKeyError, setTpKeyError] = useState(false);
 
   // ==================== MOVIMIENTO ====================
@@ -32,10 +33,10 @@ const CameraToolPage = () => {
   const [activeDir, setActiveDir] = useState("up");
 
   const emptyMovement = {
-    up:    { ctrl: false, shift: false, alt: false, keys: [] },
-    down:  { ctrl: false, shift: false, alt: false, keys: [] },
-    left:  { ctrl: false, shift: false, alt: false, keys: [] },
-    right: { ctrl: false, shift: false, alt: false, keys: [] },
+    up:    { ctrl: false, shift: false, alt: false, key: '' }, // ← Cambiado: solo 1 key por dirección
+    down:  { ctrl: false, shift: false, alt: false, key: '' },
+    left:  { ctrl: false, shift: false, alt: false, key: '' },
+    right: { ctrl: false, shift: false, alt: false, key: '' },
   };
 
   const [movementConfig, setMovementConfig] = useState(emptyMovement);
@@ -55,30 +56,40 @@ const CameraToolPage = () => {
     }
   };
 
+  // Captura de teclado en Custom (solo 1 tecla normal + modificadores)
   useEffect(() => {
     if (movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
       if (!activeDir) return;
 
-      if (e.key === "Control") { updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl }); return; }
-      if (e.key === "Shift")   { updateDir(activeDir, { shift: !movementConfig[activeDir].shift }); return; }
-      if (e.key === "Alt")     { updateDir(activeDir, { alt: !movementConfig[activeDir].alt }); return; }
+      // Toggle modificadores
+      if (e.key === "Control") {
+        updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl });
+        return;
+      }
+      if (e.key === "Shift") {
+        updateDir(activeDir, { shift: !movementConfig[activeDir].shift });
+        return;
+      }
+      if (e.key === "Alt") {
+        updateDir(activeDir, { alt: !movementConfig[activeDir].alt });
+        return;
+      }
+
+      // Ignorar Backspace, Escape, Enter, etc.
+      if (["Backspace", "Escape", "Enter", "Tab", "Meta", "ContextMenu"].includes(e.key)) {
+        e.preventDefault();
+        return;
+      }
 
       e.preventDefault();
       const key = e.key.toLowerCase().trim();
 
-      setMovementConfig(prev => {
-        const current = prev[activeDir];
-        const hasKey = current.keys.includes(key);
-        return {
-          ...prev,
-          [activeDir]: {
-            ...current,
-            keys: hasKey ? current.keys.filter(k => k !== key) : [...current.keys, key]
-          }
-        };
-      });
+      // Si es tecla normal válida → reemplazar la anterior (solo 1 permitida)
+      if (/^[a-z0-9[\]\\;',./\-=`~ ]$/.test(key)) {
+        updateDir(activeDir, { key });
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -91,8 +102,8 @@ const CameraToolPage = () => {
     if (cfg.ctrl) parts.push("CTRL");
     if (cfg.shift) parts.push("SHIFT");
     if (cfg.alt) parts.push("ALT");
-    parts.push(...cfg.keys.map(k => k.toUpperCase()));
-    return parts.join(" + ") || "—";
+    if (cfg.key) parts.push(cfg.key.toUpperCase());
+    return parts.length ? parts.join(" + ") : "—";
   };
 
   const getVisualKey = (dir) => {
@@ -107,7 +118,7 @@ const CameraToolPage = () => {
     if (cfg.ctrl) parts.push("(keyboard.lctrl?0 | keyboard.rctrl?0)");
     if (cfg.shift) parts.push("(keyboard.lshift?0 | keyboard.rshift?0)");
     if (cfg.alt) parts.push("(keyboard.lalt?0 | keyboard.ralt?0)");
-    cfg.keys.forEach(k => parts.push(`keyboard.${k}?0`));
+    if (cfg.key) parts.push(`keyboard.${cfg.key}?0`);
     return parts.length ? parts.join(" & ") : "";
   };
 
@@ -140,12 +151,9 @@ const CameraToolPage = () => {
   };
 
   const handleCamKeyBlur = () => {
-    if (!camMainKey) {
-      setCamMainKey('0');
-    }
+    if (!camMainKey) setCamMainKey('0');
   };
 
-  // Mantener foco en casilla Camera Zero
   useEffect(() => {
     if (camKeyInputRef.current && !camKeyInputRef.current.contains(document.activeElement)) {
       const timer = setTimeout(() => {
@@ -156,7 +164,6 @@ const CameraToolPage = () => {
     }
   }, [camCtrl, camShift, camAlt, camMainKey]);
 
-  // ==================== TELEPORT ====================
   const getTpComboText = () => {
     const parts = [];
     if (tpCtrl) parts.push("CTRL");
@@ -186,12 +193,9 @@ const CameraToolPage = () => {
   };
 
   const handleTpKeyBlur = () => {
-    if (!tpMainKey) {
-      setTpMainKey('f9');
-    }
+    if (!tpMainKey) setTpMainKey('f9');
   };
 
-  // Mantener foco en casilla Teleport
   useEffect(() => {
     if (tpKeyInputRef.current && !tpKeyInputRef.current.contains(document.activeElement)) {
       const timer = setTimeout(() => {
@@ -221,6 +225,25 @@ const CameraToolPage = () => {
 
     const result = generateControls(fileContent, config);
     setOutput(result);
+  };
+
+  const handleCopy = () => {
+    if (!output) return;
+    navigator.clipboard.writeText(output).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleDownload = () => {
+    if (!output) return;
+    const blob = new Blob([output], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'controls.sii';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -308,11 +331,10 @@ const CameraToolPage = () => {
           </div>
         </div>
 
-        {/* Teleport - Versión corregida */}
+        {/* Teleport */}
         <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
           <h2 className="text-xl font-semibold mb-4">Teleport</h2>
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            {/* Toggles */}
             <div className="flex gap-4 flex-wrap">
               {[
                 ["CTRL", tpCtrl, setTpCtrl],
@@ -331,7 +353,6 @@ const CameraToolPage = () => {
               ))}
             </div>
 
-            {/* Casilla editable para tecla principal (default F9) */}
             <div className="flex flex-col">
               <input
                 ref={tpKeyInputRef}
@@ -353,7 +374,6 @@ const CameraToolPage = () => {
               )}
             </div>
 
-            {/* Casilla de resultado */}
             <div className="flex-1 min-w-[200px]">
               <div className="w-full h-16 flex items-center justify-center bg-black border-2 border-gray-600 rounded-xl font-mono text-xl text-yellow-300">
                 {getTpComboText()}
@@ -371,7 +391,9 @@ const CameraToolPage = () => {
               <button
                 key={mode}
                 onClick={() => handleModeChange(mode)}
-                className={`px-7 py-3 rounded-xl border font-medium transition-all ${movementMode === mode ? 'border-yellow-400 bg-yellow-400/15 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'}`}
+                className={`px-7 py-3 rounded-xl border font-medium transition-all ${
+                  movementMode === mode ? 'border-yellow-400 bg-yellow-400/15 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                }`}
               >
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </button>
@@ -384,7 +406,9 @@ const CameraToolPage = () => {
                 <button
                   key={mod}
                   onClick={() => updateDir(activeDir, { [mod]: !movementConfig[activeDir][mod] })}
-                  className={`px-8 py-3 rounded-xl border text-base font-medium transition-all ${movementConfig[activeDir][mod] ? 'border-yellow-400 bg-yellow-500/15 shadow-[0_0_12px_rgba(255,204,0,0.4)]' : 'border-gray-600 hover:bg-gray-800'}`}
+                  className={`px-8 py-3 rounded-xl border text-base font-medium transition-all ${
+                    movementConfig[activeDir][mod] ? 'border-yellow-400 bg-yellow-500/15 shadow-[0_0_12px_rgba(255,204,0,0.4)]' : 'border-gray-600 hover:bg-gray-800'
+                  }`}
                 >
                   {mod.toUpperCase()}
                 </button>
@@ -397,35 +421,51 @@ const CameraToolPage = () => {
               <div />
               <button
                 onClick={() => setActiveDir("up")}
-                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${activeDir === "up" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'}`}
+                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
+                  activeDir === "up" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
+                }`}
               >
                 {getVisualKey("up")}
-                {movementMode === "custom" && <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("up")}</div>}
+                {movementMode === "custom" && (
+                  <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("up")}</div>
+                )}
               </button>
               <div />
 
               <button
                 onClick={() => setActiveDir("left")}
-                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${activeDir === "left" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'}`}
+                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
+                  activeDir === "left" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
+                }`}
               >
                 {getVisualKey("left")}
-                {movementMode === "custom" && <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("left")}</div>}
+                {movementMode === "custom" && (
+                  <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("left")}</div>
+                )}
               </button>
 
               <button
                 onClick={() => setActiveDir("down")}
-                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${activeDir === "down" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'}`}
+                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
+                  activeDir === "down" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
+                }`}
               >
                 {getVisualKey("down")}
-                {movementMode === "custom" && <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("down")}</div>}
+                {movementMode === "custom" && (
+                  <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("down")}</div>
+                )}
               </button>
 
               <button
                 onClick={() => setActiveDir("right")}
-                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${activeDir === "right" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'}`}
+                className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
+                  activeDir === "right" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
+                }`}
               >
                 {getVisualKey("right")}
-                {movementMode === "custom" && <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("right")}</div>}
+                {movementMode === "custom" && (
+                  <div className="text-xs mt-2 font-mono text-yellow-300">{getComboText("right")}</div>
+                )}
               </button>
             </div>
           </div>
@@ -439,24 +479,49 @@ const CameraToolPage = () => {
                 className="w-96 h-14 text-center bg-black border-2 border-yellow-400 rounded-2xl font-mono text-xl shadow-[0_0_15px_rgba(255,204,0,0.4)]"
                 placeholder="Presiona teclas para esta dirección..."
               />
-              <p className="text-sm text-gray-400 mt-3">Configurando: <span className="text-yellow-300 font-bold">{activeDir.toUpperCase()}</span></p>
+              <p className="text-sm text-gray-400 mt-3">
+                Configurando: <span className="text-yellow-300 font-bold">{activeDir.toUpperCase()}</span>
+              </p>
             </div>
           )}
         </div>
 
-        <div className="flex justify-center">
+        {/* Botones Generar + Copiar + Descargar */}
+        <div className="flex flex-col md:flex-row justify-center gap-6 mt-8">
           <button
             onClick={handleGenerate}
             className="bg-blue-600 hover:bg-blue-700 px-14 py-5 rounded-2xl text-lg font-semibold transition-all shadow-lg"
           >
             Generar Controls
           </button>
+
+          {output && (
+            <>
+              <button
+                onClick={handleCopy}
+                className={`px-10 py-5 rounded-2xl text-lg font-semibold transition-all shadow-lg ${
+                  copied ? 'bg-green-600' : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {copied ? '¡Copiado!' : 'Copiar'}
+              </button>
+
+              <button
+                onClick={handleDownload}
+                className="bg-purple-600 hover:bg-purple-700 px-10 py-5 rounded-2xl text-lg font-semibold transition-all shadow-lg"
+              >
+                Descargar controls.sii
+              </button>
+            </>
+          )}
         </div>
 
         {output && (
-          <pre className="mt-12 bg-black p-8 rounded-2xl text-green-300 font-mono text-sm border border-gray-700 overflow-auto">
-            {output}
-          </pre>
+          <div className="mt-12">
+            <pre className="bg-black p-8 rounded-2xl text-green-300 font-mono text-sm border border-gray-700 overflow-auto max-h-[60vh]">
+              {output}
+            </pre>
+          </div>
         )}
       </div>
 
