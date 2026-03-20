@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Globe } from 'lucide-react';
@@ -11,8 +10,9 @@ const Header = () => {
   const navLinks = [
     { path: '/', label: 'Inicio' },
     { path: '/config', label: 'Herramienta de Configuración' },
-    { path: '/camera', label: 'Herramienta de Cámara' },
-    { path: '/mods', label: 'Herramienta de Mods' }
+    { path: '/camara-cero', label: 'Herramienta de Cámara' },
+    // { path: '/perfiles', label: 'Herramienta de Mods' } // Comentado hasta que exista la página
+    { path: '#', label: 'Herramienta de Mods (Próximamente)', disabled: true } // Placeholder visual
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -32,10 +32,15 @@ const Header = () => {
                 key={link.path}
                 to={link.path}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isActive(link.path)
-                    ? 'text-primary bg-primary/10 glow-primary-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  link.disabled
+                    ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                    : isActive(link.path)
+                      ? 'text-primary bg-primary/10 glow-primary-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
+                onClick={(e) => {
+                  if (link.disabled) e.preventDefault();
+                }}
               >
                 {link.label}
               </Link>
@@ -65,11 +70,19 @@ const Header = () => {
                   <Link
                     key={link.path}
                     to={link.path}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={(e) => {
+                      if (link.disabled) {
+                        e.preventDefault();
+                      } else {
+                        setMobileOpen(false);
+                      }
+                    }}
                     className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive(link.path)
-                        ? 'text-primary bg-primary/10 glow-primary-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      link.disabled
+                        ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                        : isActive(link.path)
+                          ? 'text-primary bg-primary/10 glow-primary-sm'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     }`}
                   >
                     {link.label}

@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
-import { generateControls } from '@/utils/ControlsGenerator.js';
+import { generateControls } from '@/utilidades/ControlesGenerador.js';
 
-const CameraToolPage = () => {
+const CamaraCero = () => {
   const fileInputRef = useRef(null);
   const customInputRef = useRef(null);
   const camKeyInputRef = useRef(null);
@@ -14,7 +15,7 @@ const CameraToolPage = () => {
   const [output, setOutput] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // ==================== CAMERA ZERO ====================
+  // ==================== ACTIVAR CÁMARA CERO ====================
   const [camCtrl, setCamCtrl] = useState(false);
   const [camShift, setCamShift] = useState(false);
   const [camAlt, setCamAlt] = useState(false);
@@ -25,7 +26,7 @@ const CameraToolPage = () => {
   const [tpCtrl, setTpCtrl] = useState(true);
   const [tpShift, setTpShift] = useState(false);
   const [tpAlt, setTpAlt] = useState(false);
-  const [tpMainKey, setTpMainKey] = useState('f9');
+  const [tpMainKey, setTpMainKey] = useState('F9');
   const [tpKeyError, setTpKeyError] = useState(false);
 
   // ==================== MOVIMIENTO ====================
@@ -49,41 +50,47 @@ const CameraToolPage = () => {
   };
 
   const handleModeChange = (mode) => {
+    if (movementMode === "custom" && mode !== "custom") {
+      setMovementConfig(emptyMovement);
+      setActiveDir("up");
+    }
+
     setMovementMode(mode);
     setActiveDir("up");
+
     if (mode === "custom") {
       setTimeout(() => customInputRef.current?.focus(), 80);
     }
   };
 
   useEffect(() => {
-    if (movementMode !== "custom") return;
+    const input = customInputRef.current;
+    if (!input || movementMode !== "custom") return;
 
     const handleKeyDown = (e) => {
       if (!activeDir) return;
 
-      // Toggle modificadores
       if (e.key === "Control") {
+        e.preventDefault();
         updateDir(activeDir, { ctrl: !movementConfig[activeDir].ctrl });
         return;
       }
       if (e.key === "Shift") {
+        e.preventDefault();
         updateDir(activeDir, { shift: !movementConfig[activeDir].shift });
         return;
       }
       if (e.key === "Alt") {
+        e.preventDefault();
         updateDir(activeDir, { alt: !movementConfig[activeDir].alt });
         return;
       }
 
-      // Backspace borra la tecla normal
       if (e.key === "Backspace") {
         updateDir(activeDir, { key: '' });
-        e.preventDefault();
         return;
       }
 
-      // Ignorar otras teclas de sistema
       if (["Escape", "Enter", "Tab", "Meta", "ContextMenu"].includes(e.key)) {
         e.preventDefault();
         return;
@@ -92,14 +99,13 @@ const CameraToolPage = () => {
       e.preventDefault();
       const key = e.key.toLowerCase().trim();
 
-      // Solo aceptar teclas válidas como tecla principal (reemplaza)
       if (/^[a-z0-9[\]\\;',./\-=`~ ]$/.test(key)) {
         updateDir(activeDir, { key });
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    input.addEventListener("keydown", handleKeyDown);
+    return () => input.removeEventListener("keydown", handleKeyDown);
   }, [movementMode, activeDir, movementConfig]);
 
   const getComboText = (dir) => {
@@ -138,37 +144,40 @@ const CameraToolPage = () => {
   };
 
   const handleCamKeyChange = (e) => {
-    const value = e.target.value.trim();
+    const value = e.target.value.trim().toUpperCase();
     setCamKeyError(false);
 
-    if (value === '') {
+    const lastChar = value.slice(-1);
+
+    if (lastChar === '') {
       setCamMainKey('');
-      return;
-    }
-
-    const lastChar = value.slice(-1).toLowerCase();
-    const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(lastChar);
-
-    if (isValid) {
+    } else if (/^[A-Z0-9]$/.test(lastChar)) {
       setCamMainKey(lastChar);
     } else {
       setCamKeyError(true);
     }
+
+    // Re-enfoca y sombrea inmediatamente después de escribir
+    setTimeout(() => {
+      if (camKeyInputRef.current) {
+        camKeyInputRef.current.focus();
+        camKeyInputRef.current.select();
+      }
+    }, 0);
   };
 
   const handleCamKeyBlur = () => {
     if (!camMainKey) setCamMainKey('0');
   };
 
-  useEffect(() => {
-    if (camKeyInputRef.current && !camKeyInputRef.current.contains(document.activeElement)) {
-      const timer = setTimeout(() => {
-        camKeyInputRef.current?.focus();
-        camKeyInputRef.current?.select();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [camCtrl, camShift, camAlt, camMainKey]);
+  const keepCamFocus = () => {
+    setTimeout(() => {
+      if (camKeyInputRef.current) {
+        camKeyInputRef.current.focus();
+        camKeyInputRef.current.select();
+      }
+    }, 0);
+  };
 
   const getTpComboText = () => {
     const parts = [];
@@ -180,47 +189,50 @@ const CameraToolPage = () => {
   };
 
   const handleTpKeyChange = (e) => {
-    const value = e.target.value.trim();
+    const value = e.target.value.trim().toUpperCase();
     setTpKeyError(false);
 
-    if (value === '') {
+    const lastChar = value.slice(-1);
+
+    if (lastChar === '') {
       setTpMainKey('');
-      return;
-    }
-
-    const lastChar = value.slice(-1).toLowerCase();
-    const isValid = /^[a-z0-9[\]\\;',./\-=`~ ]$/.test(lastChar);
-
-    if (isValid) {
+    } else if (/^[A-Z0-9]$/.test(lastChar)) {
       setTpMainKey(lastChar);
     } else {
       setTpKeyError(true);
     }
+
+    // Re-enfoca y sombrea inmediatamente después de escribir
+    setTimeout(() => {
+      if (tpKeyInputRef.current) {
+        tpKeyInputRef.current.focus();
+        tpKeyInputRef.current.select();
+      }
+    }, 0);
   };
 
   const handleTpKeyBlur = () => {
-    if (!tpMainKey) setTpMainKey('f9');
+    if (!tpMainKey) setTpMainKey('F9');
   };
 
-  useEffect(() => {
-    if (tpKeyInputRef.current && !tpKeyInputRef.current.contains(document.activeElement)) {
-      const timer = setTimeout(() => {
-        tpKeyInputRef.current?.focus();
-        tpKeyInputRef.current?.select();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [tpCtrl, tpShift, tpAlt, tpMainKey]);
+  const keepTpFocus = () => {
+    setTimeout(() => {
+      if (tpKeyInputRef.current) {
+        tpKeyInputRef.current.focus();
+        tpKeyInputRef.current.select();
+      }
+    }, 0);
+  };
 
   const handleGenerate = () => {
     if (!fileContent) {
-      alert("Sube primero tu archivo controls.sii");
+      toast.error("Sube primero tu archivo controls.sii");
       return;
     }
 
     const config = {
       camera: buildCombo({ ctrl: camCtrl, shift: camShift, alt: camAlt, key: camMainKey || '0' }),
-      teleport: buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, key: tpMainKey || 'f9' }),
+      teleport: buildCombo({ ctrl: tpCtrl, shift: tpShift, alt: tpAlt, key: tpMainKey || 'F9' }),
       movement: {
         up:    buildCombo(movementConfig.up),
         down:  buildCombo(movementConfig.down),
@@ -231,14 +243,14 @@ const CameraToolPage = () => {
 
     const result = generateControls(fileContent, config);
     setOutput(result);
+    toast.success("Controls generado");
   };
 
   const handleCopy = () => {
     if (!output) return;
-    navigator.clipboard.writeText(output).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
@@ -257,15 +269,23 @@ const CameraToolPage = () => {
       <Header />
 
       <div className="max-w-5xl mx-auto p-6">
-        <div className="flex items-center justify-center gap-3 mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center justify-center gap-3 mb-10"
+        >
           <span className="text-5xl">🎮</span>
-          <h1 className="text-4xl font-bold">Controls Generator (Cámara Zero)</h1>
-        </div>
+          <h1 className="text-4xl font-bold">Controls Generator (Cámara Cero)</h1>
+        </motion.div>
 
         {/* Upload */}
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
           onClick={() => fileInputRef.current.click()}
-          className="bg-[#111] border border-gray-700 hover:border-yellow-400 p-8 rounded-2xl text-center cursor-pointer mb-8 transition-all"
+          className="bg-[#111] border border-gray-700 hover:border-yellow-400 p-8 rounded-2xl text-center cursor-pointer mb-8 transition-all shadow-lg"
         >
           <p className="text-yellow-400 font-semibold text-lg">Click para subir controls.sii</p>
           <input
@@ -284,10 +304,16 @@ const CameraToolPage = () => {
             className="hidden"
           />
           {fileName && <p className="text-sm text-gray-400 mt-2">Archivo: {fileName}</p>}
-        </div>
+        </motion.div>
 
         {/* Activar Cámara Cero */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-6 shadow-lg"
+          onClick={keepCamFocus}
+        >
           <h2 className="text-xl font-semibold mb-4">Activar Cámara Cero</h2>
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <div className="flex gap-4 flex-wrap">
@@ -298,9 +324,12 @@ const CameraToolPage = () => {
               ].map(([label, val, set]) => (
                 <button
                   key={label}
-                  onClick={() => set(!val)}
+                  onClick={() => {
+                    set(!val);
+                    keepCamFocus();
+                  }}
                   className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
-                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,215,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
                   }`}
                 >
                   {label}
@@ -312,9 +341,21 @@ const CameraToolPage = () => {
               <input
                 ref={camKeyInputRef}
                 type="text"
-                maxLength={2}
+                maxLength={1}
                 value={camMainKey.toUpperCase()}
-                onChange={handleCamKeyChange}
+                onChange={(e) => {
+                  const value = e.target.value.trim().toUpperCase();
+                  const lastChar = value.slice(-1);
+
+                  if (lastChar === '') {
+                    setCamMainKey('');
+                  } else if (/^[A-Z0-9]$/.test(lastChar)) {
+                    setCamMainKey(lastChar);
+                  } else {
+                    setCamKeyError(true);
+                  }
+                  keepCamFocus(); // Re-sombrea inmediatamente después de escribir
+                }}
                 onFocus={(e) => e.target.select()}
                 onBlur={handleCamKeyBlur}
                 className={`w-20 h-16 text-center bg-black border-2 rounded-xl font-mono text-3xl shadow-[0_0_12px_rgba(255,204,0,0.3)] focus:outline-none focus:border-yellow-500 ${
@@ -335,23 +376,34 @@ const CameraToolPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Teleport */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8 shadow-lg"
+          onClick={keepTpFocus}
+        >
           <h2 className="text-xl font-semibold mb-4">Teleport</h2>
+
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <div className="flex gap-4 flex-wrap">
               {[
-                ["CTRL", tpCtrl, setTpCtrl],
-                ["SHIFT", tpShift, setTpShift],
-                ["ALT", tpAlt, setTpAlt]
-              ].map(([label, val, set]) => (
+                ["CTRL", tpCtrl, () => setTpCtrl(!tpCtrl)],
+                ["SHIFT", tpShift, () => setTpShift(!tpShift)],
+                ["ALT", tpAlt, () => setTpAlt(!tpAlt)],
+                ["F9", tpMainKey === 'F9', () => setTpMainKey(tpMainKey === 'F9' ? '' : 'F9')]
+              ].map(([label, val, toggle]) => (
                 <button
                   key={label}
-                  onClick={() => set(!val)}
+                  onClick={() => {
+                    toggle();
+                    keepTpFocus(); // Re-enfoca y sombrea después de clicar botón
+                  }}
                   className={`px-6 py-3 rounded-xl border text-sm font-medium transition-all ${
-                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,204,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
+                    val ? 'border-yellow-400 bg-yellow-400/10 shadow-[0_0_12px_rgba(255,215,0,0.5)]' : 'border-gray-600 hover:bg-gray-800'
                   }`}
                 >
                   {label}
@@ -363,9 +415,21 @@ const CameraToolPage = () => {
               <input
                 ref={tpKeyInputRef}
                 type="text"
-                maxLength={2}
+                maxLength={1}
                 value={tpMainKey.toUpperCase()}
-                onChange={handleTpKeyChange}
+                onChange={(e) => {
+                  const value = e.target.value.trim().toUpperCase();
+                  const lastChar = value.slice(-1);
+
+                  if (lastChar === '') {
+                    setTpMainKey('');
+                  } else if (/^[A-Z0-9]$/.test(lastChar)) {
+                    setTpMainKey(lastChar);
+                  } else {
+                    setTpKeyError(true);
+                  }
+                  keepTpFocus(); // Re-sombrea inmediatamente después de escribir
+                }}
                 onFocus={(e) => e.target.select()}
                 onBlur={handleTpKeyBlur}
                 className={`w-20 h-16 text-center bg-black border-2 rounded-xl font-mono text-3xl shadow-[0_0_12px_rgba(255,204,0,0.3)] focus:outline-none focus:border-yellow-500 ${
@@ -386,10 +450,15 @@ const CameraToolPage = () => {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Movimiento Cámara */}
-        <div className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-[#111] border border-gray-700 p-6 rounded-2xl mb-8 shadow-lg"
+        >
           <h2 className="text-xl font-semibold mb-6">Movimiento Cámara</h2>
 
           <div className="flex gap-3 mb-8">
@@ -426,7 +495,10 @@ const CameraToolPage = () => {
             <div className="grid grid-cols-3 gap-5">
               <div />
               <button
-                onClick={() => setActiveDir("up")}
+                onClick={() => {
+                  setActiveDir("up");
+                  keepCustomFocus();
+                }}
                 className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
                   activeDir === "up" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
                 }`}
@@ -439,7 +511,10 @@ const CameraToolPage = () => {
               <div />
 
               <button
-                onClick={() => setActiveDir("left")}
+                onClick={() => {
+                  setActiveDir("left");
+                  keepCustomFocus();
+                }}
                 className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
                   activeDir === "left" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
                 }`}
@@ -451,7 +526,10 @@ const CameraToolPage = () => {
               </button>
 
               <button
-                onClick={() => setActiveDir("down")}
+                onClick={() => {
+                  setActiveDir("down");
+                  keepCustomFocus();
+                }}
                 className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
                   activeDir === "down" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
                 }`}
@@ -463,7 +541,10 @@ const CameraToolPage = () => {
               </button>
 
               <button
-                onClick={() => setActiveDir("right")}
+                onClick={() => {
+                  setActiveDir("right");
+                  keepCustomFocus();
+                }}
                 className={`w-24 h-24 flex flex-col items-center justify-center border-2 rounded-2xl text-6xl transition-all ${
                   activeDir === "right" && movementMode === "custom" ? 'border-yellow-400 bg-yellow-500/10 shadow-[0_0_24px_rgba(255,204,0,0.7)]' : 'border-gray-700 bg-gray-900'
                 }`}
@@ -481,8 +562,18 @@ const CameraToolPage = () => {
               <input
                 ref={customInputRef}
                 value={getComboText(activeDir)}
-                readOnly
-                className="w-96 h-14 text-center bg-black border-2 border-yellow-400 rounded-2xl font-mono text-xl shadow-[0_0_15px_rgba(255,204,0,0.4)]"
+                onChange={(e) => {
+                  const value = e.target.value.trim().toUpperCase();
+                  const lastChar = value.slice(-1);
+
+                  if (lastChar === '') {
+                    updateDir(activeDir, { key: '' });
+                  } else if (/^[A-Z0-9]$/.test(lastChar)) {
+                    updateDir(activeDir, { key: lastChar.toLowerCase() });
+                  }
+                  keepCustomFocus(); // Re-sombrea inmediatamente después de escribir
+                }}
+                className="w-96 h-14 text-center bg-black border-2 border-yellow-400 rounded-2xl font-mono text-xl shadow-[0_0_15px_rgba(255,204,0,0.4)] focus:outline-none focus:border-yellow-500"
                 placeholder="Presiona teclas para esta dirección..."
               />
               <p className="text-sm text-gray-400 mt-3">
@@ -490,7 +581,7 @@ const CameraToolPage = () => {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Botones Generar + Copiar + Descargar */}
         <div className="flex flex-col md:flex-row justify-center gap-6 mt-8">
@@ -536,4 +627,4 @@ const CameraToolPage = () => {
   );
 };
 
-export default CameraToolPage;
+export default CamaraCero;
